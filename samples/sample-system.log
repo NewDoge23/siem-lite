@@ -1,0 +1,13 @@
+2026-06-18 09:00:00 INFO [system] Service started successfully
+2026-06-18 09:01:12 INFO [auth] User gaston logged in from 192.168.1.25
+2026-06-18 09:03:44 WARN [network] High latency detected on interface eth0
+2026-06-18 09:05:18 ERROR [auth] Failed login for user admin from 203.0.113.45
+2026-06-18 09:05:40 ERROR [auth] Failed login for user admin from 203.0.113.45
+2026-06-18 09:06:02 ERROR [auth] Access denied for user root from 203.0.113.45
+2026-06-18 09:10:31 INFO [backup] Scheduled backup completed
+2026-06-18 09:12:05 CRITICAL [endpoint] Malware signature detected on host SOC-LAB-01
+2026-06-18 09:15:22 WARN [firewall] Unauthorized connection attempt blocked from 198.51.100.77
+2026-06-18 09:18:10 INFO [system] Disk usage check completed
+2026-06-18 09:22:50 ERROR [ids] Possible bruteforce pattern detected against SSH service
+Unstructured line without timestamp but with unauthorized keyword
+Another plain informational line without known severity

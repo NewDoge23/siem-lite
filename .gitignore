@@ -1,0 +1,15 @@
+target/
+
+.idea/
+*.iml
+.vscode/
+
+*.log
+!samples/*.log
+
+*.tmp
+*.bak
+*.swp
+
+.DS_Store
+Thumbs.db
