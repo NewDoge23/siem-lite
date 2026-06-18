@@ -10,6 +10,18 @@ SIEM Lite is a lightweight desktop application for basic log analysis. It allows
 
 This project was built as a cybersecurity/SOC portfolio project. The goal is to demonstrate a practical SOC Analyst Level 1 workflow, clean Java structure, and a small but extensible foundation for future improvements.
 
+## Product Vision
+
+SIEM Lite aims to become a personal Windows SIEM for cybersecurity students, educators, homelabs, and entry-level SOC learning environments.
+
+The project focuses on local Windows event monitoring, basic security analysis, educational explanations, and a simple desktop experience. It is not intended to replace enterprise SIEM platforms such as Splunk, Microsoft Sentinel, QRadar, or Wazuh.
+
+Planned capabilities include local SQLite persistence, Windows Event Log support, dashboard views, Learning Mode, Professional Mode, Knowledge Cards, Light/Dark/System themes, and multilingual UI support.
+
+Planned language support includes English as the base fallback language, with initial support for Spanish, Chinese, Hindi, and Arabic. Translation quality and RTL layout support will be improved progressively before `v1.0.0`.
+
+See the full strategic roadmap in [docs/ROADMAP.md](docs/ROADMAP.md).
+
 ## Project Status
 
 **Type:** Portfolio project  
@@ -113,20 +125,24 @@ mvn clean test
 
 ## Roadmap
 
-### v0.2.0
+### Near-term
 
-- Add PostgreSQL persistence.
+- `v0.2.x`: Local SQLite persistence and AppData settings foundation.
+- `v0.3.x`: Localization foundation, language selector, and event history.
+- `v0.4.x`: Local Windows Event Log support.
+- `v0.5.x`: Windows-focused detection rules and theme architecture.
 
-### Future
+### Long-term
 
-- Saved event history.
-- Basic dashboard.
-- Enhanced detection rules.
-- Improved parsing for common SOC log formats.
-- More sample logs and unit tests.
+- `v0.6.x`: Dashboard.
+- `v0.7.x`: Basic correlation.
+- `v0.8.x`: Learning Mode, Professional Mode, localized Knowledge Cards, and educational content.
+- `v0.9.x`: Background mode, notifications, installer, QA, and release candidate hardening.
+- `v1.0.0`: Stable personal Windows SIEM release.
 
 ## Out Of Scope For v0.1.0
 
+- SQLite persistence.
 - PostgreSQL integration.
 - Dashboard.
 - Event history.
