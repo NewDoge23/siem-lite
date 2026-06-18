@@ -71,9 +71,9 @@ public class MainController {
     @FXML
     private void onImportLog() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Importar archivo de log");
+        fileChooser.setTitle("Import Log File");
         fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Archivos de log", "*.log", "*.txt"));
+                new FileChooser.ExtensionFilter("Log files", "*.log", "*.txt"));
 
         File selectedFile = fileChooser.showOpenDialog(eventsTable.getScene().getWindow());
         if (selectedFile == null) {
@@ -89,7 +89,7 @@ public class MainController {
         } catch (IOException exception) {
             allEvents.clear();
             eventsTable.getItems().clear();
-            statusLabel.setText("No se pudo importar el archivo: " + exception.getMessage());
+            statusLabel.setText("Could not import file: " + exception.getMessage());
         }
     }
 
@@ -105,7 +105,7 @@ public class MainController {
 
     private void configureFilters() {
         severityComboBox.setItems(FXCollections.observableArrayList(
-                "Todas", Severity.INFO.name(), Severity.WARN.name(), Severity.ERROR.name(),
+                "All", Severity.INFO.name(), Severity.WARN.name(), Severity.ERROR.name(),
                 Severity.CRITICAL.name(), Severity.UNKNOWN.name()));
         severityComboBox.getSelectionModel().selectFirst();
 
@@ -118,13 +118,13 @@ public class MainController {
         String selectedSeverity = severityComboBox.getValue();
         List<LogEvent> filteredEvents = eventFilterService.filter(allEvents, searchText, selectedSeverity);
         eventsTable.setItems(FXCollections.observableArrayList(filteredEvents));
-        statusLabel.setText("Eventos visibles: " + filteredEvents.size() + " / " + allEvents.size());
+        statusLabel.setText("Visible events: " + filteredEvents.size() + " / " + allEvents.size());
     }
 
     private void updateStatus(String fileName, int eventCount) {
         long suspiciousCount = allEvents.stream().filter(LogEvent::isSuspicious).count();
-        statusLabel.setText("Archivo importado: " + fileName
-                + " | Eventos: " + eventCount
-                + " | Sospechosos: " + suspiciousCount);
+        statusLabel.setText("Imported file: " + fileName
+                + " | Events: " + eventCount
+                + " | Suspicious: " + suspiciousCount);
     }
 }

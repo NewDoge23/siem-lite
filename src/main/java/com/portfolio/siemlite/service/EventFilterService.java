@@ -9,7 +9,7 @@ public class EventFilterService {
 
     public List<LogEvent> filter(List<LogEvent> events, String searchText, String selectedSeverity) {
         String normalizedSearch = searchText == null ? "" : searchText.trim().toLowerCase(Locale.ROOT);
-        String severityFilter = selectedSeverity == null ? "Todas" : selectedSeverity;
+        String severityFilter = selectedSeverity == null ? "All" : selectedSeverity;
 
         return events.stream()
                 .filter(event -> matchesSeverity(event, severityFilter))
@@ -18,7 +18,7 @@ public class EventFilterService {
     }
 
     private boolean matchesSeverity(LogEvent event, String selectedSeverity) {
-        return "Todas".equals(selectedSeverity) || event.getSeverity().name().equals(selectedSeverity);
+        return "All".equals(selectedSeverity) || event.getSeverity().name().equals(selectedSeverity);
     }
 
     private boolean matchesSearch(LogEvent event, String normalizedSearch) {

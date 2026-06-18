@@ -55,7 +55,7 @@ public class LogEvent {
     }
 
     public String getSuspiciousLabel() {
-        return suspicious ? "Si" : "No";
+        return suspicious ? "Yes" : "No";
     }
 
     public String getMatchedKeyword() {

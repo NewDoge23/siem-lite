@@ -36,7 +36,7 @@ class EventFilterServiceTest {
                 new LogEvent(2, "", Severity.WARN, "network", "High latency", "WARN High latency")
         );
 
-        List<LogEvent> filtered = filterService.filter(events, "", "Todas");
+        List<LogEvent> filtered = filterService.filter(events, "", "All");
 
         assertEquals(2, filtered.size());
     }

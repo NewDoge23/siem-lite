@@ -97,7 +97,7 @@ mvn clean test
 ## How To Test With The Sample Log
 
 1. Run the application with `mvn javafx:run`.
-2. Click `Importar log`.
+2. Click `Import Log`.
 3. Select `samples/sample-system.log`.
 4. Review the imported events in the table.
 5. Try text filters such as:

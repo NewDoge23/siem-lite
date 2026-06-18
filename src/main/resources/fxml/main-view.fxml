@@ -22,8 +22,8 @@
             </padding>
             <Label text="SIEM Lite" styleClass="app-title"/>
             <HBox spacing="10">
-                <Button fx:id="importButton" text="Importar log" onAction="#onImportLog"/>
-                <TextField fx:id="searchField" promptText="Filtrar por texto, fuente, keyword o mensaje" HBox.hgrow="ALWAYS"/>
+                <Button fx:id="importButton" text="Import Log" onAction="#onImportLog"/>
+                <TextField fx:id="searchField" promptText="Filter by text, source, keyword, or message" HBox.hgrow="ALWAYS"/>
                 <ComboBox fx:id="severityComboBox" prefWidth="160"/>
             </HBox>
         </VBox>
@@ -33,11 +33,11 @@
             <columns>
                 <TableColumn fx:id="lineNumberColumn" text="#" prefWidth="70"/>
                 <TableColumn fx:id="timestampColumn" text="Timestamp" prefWidth="165"/>
-                <TableColumn fx:id="severityColumn" text="Severidad" prefWidth="105"/>
-                <TableColumn fx:id="sourceColumn" text="Fuente" prefWidth="140"/>
-                <TableColumn fx:id="suspiciousColumn" text="Sospechoso" prefWidth="110"/>
+                <TableColumn fx:id="severityColumn" text="Severity" prefWidth="105"/>
+                <TableColumn fx:id="sourceColumn" text="Source" prefWidth="140"/>
+                <TableColumn fx:id="suspiciousColumn" text="Suspicious" prefWidth="110"/>
                 <TableColumn fx:id="keywordColumn" text="Keyword" prefWidth="120"/>
-                <TableColumn fx:id="messageColumn" text="Mensaje" prefWidth="470"/>
+                <TableColumn fx:id="messageColumn" text="Message" prefWidth="470"/>
             </columns>
             <columnResizePolicy>
                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
@@ -49,7 +49,7 @@
             <padding>
                 <Insets top="10" right="20" bottom="12" left="20"/>
             </padding>
-            <Label fx:id="statusLabel" text="Importá un archivo .log o .txt para comenzar."/>
+            <Label fx:id="statusLabel" text="Import a .log or .txt file to get started."/>
         </HBox>
     </bottom>
 </BorderPane>
