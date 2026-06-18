@@ -39,6 +39,7 @@ public class MainController {
     private final ObservableList<LogEvent> allEvents = FXCollections.observableArrayList();
     private final ObservableList<SavedLogEvent> savedEvents = FXCollections.observableArrayList();
     private SavedEventService savedEventService;
+    private String saveWarning = "";
 
     @FXML
     private TextField searchField;
@@ -123,6 +124,7 @@ public class MainController {
         }
 
         try {
+            saveWarning = "";
             List<LogEvent> parsedEvents = logParser.parse(selectedFile.toPath());
             detectionService.detectSuspiciousEvents(parsedEvents);
             allEvents.setAll(parsedEvents);
@@ -197,7 +199,7 @@ public class MainController {
         try {
             return savedEventService.saveSuspiciousEvents(parsedEvents, importedFilePath);
         } catch (DatabaseException exception) {
-            statusLabel.setText("Could not save suspicious events: " + exception.getMessage());
+            saveWarning = "Could not save suspicious events";
             return new SavedEventSaveResult(0, 0, 0);
         }
     }
@@ -218,17 +220,35 @@ public class MainController {
 
     private void updateStatus(String fileName, int eventCount, SavedEventSaveResult saveResult) {
         long suspiciousCount = allEvents.stream().filter(LogEvent::isSuspicious).count();
+        statusLabel.setText(buildImportStatus(
+                fileName,
+                eventCount,
+                suspiciousCount,
+                savedEventService != null,
+                saveResult,
+                saveWarning));
+    }
+
+    static String buildImportStatus(
+            String fileName,
+            int eventCount,
+            long suspiciousCount,
+            boolean autoSaveAvailable,
+            SavedEventSaveResult saveResult,
+            String saveWarning) {
         String status = "Imported file: " + fileName
                 + " | Events: " + eventCount
                 + " | Suspicious: " + suspiciousCount;
 
-        if (savedEventService == null) {
+        if (saveWarning != null && !saveWarning.isBlank()) {
+            status += " | Save warning: " + saveWarning;
+        } else if (!autoSaveAvailable) {
             status += " | Auto-save unavailable";
         } else {
             status += " | Saved: " + saveResult.savedEvents()
                     + " | Duplicates skipped: " + saveResult.duplicateEvents();
         }
 
-        statusLabel.setText(status);
+        return status;
     }
 }
