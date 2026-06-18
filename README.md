@@ -4,7 +4,7 @@
 ![JavaFX](https://img.shields.io/badge/JavaFX-21-blue)
 ![Maven](https://img.shields.io/badge/Build-Maven-red)
 ![Tests](https://img.shields.io/badge/Tests-JUnit%205-brightgreen)
-![Status](https://img.shields.io/badge/Status-V1%20Complete-success)
+![Status](https://img.shields.io/badge/Status-v0.1.0%20Complete-success)
 
 SIEM Lite is a lightweight desktop application for basic log analysis. It allows users to import `.log` and `.txt` files, parse them line by line, detect suspicious events using simple hardcoded keywords, and filter the results in a JavaFX table.
 
@@ -12,15 +12,16 @@ This project was built as a cybersecurity/SOC portfolio project. The goal is to 
 
 ## Project Status
 
-**Version:** V1.0.0  
-**Status:** Technical V1 complete and ready for portfolio presentation.  
-**Scope:** Local desktop log triage with import, parsing, keyword detection, table display, filtering, sample logs, and basic unit tests.
+**Type:** Portfolio project  
+**Current version:** v0.1.0  
+**Production use:** Not intended for production use  
+**Focus:** Demonstrating basic SOC-style log triage concepts through a small Java desktop application.
 
-This is not intended to be a full SIEM platform. PostgreSQL persistence, historical views, dashboards, and configurable detection rules are planned for later versions.
+The current release is a first public functional version. It is not intended to be a full SIEM platform.
 
 ## SOC / Portfolio Objective
 
-The V1 simulates a simple SOC-style log review flow:
+The v0.1.0 release simulates a simple SOC-style log review flow:
 
 - Load log evidence from a local file.
 - Identify basic event severity.
@@ -35,7 +36,7 @@ The V1 simulates a simple SOC-style log review flow:
 - Maven
 - JUnit 5
 
-## V1 Features
+## v0.1.0 Features
 
 - JavaFX desktop interface.
 - Import `.log` and `.txt` files.
@@ -110,16 +111,21 @@ mvn clean test
    - `CRITICAL`
    - `WARN`
 
-## V1.1 Roadmap
+## Roadmap
+
+### v0.2.0
 
 - Add PostgreSQL persistence.
-- Allow analysts to save relevant events.
-- Add a simple history view for saved events.
-- Add a basic summary dashboard.
-- Improve parsing for common SOC log formats.
-- Add more sample logs and unit tests.
 
-## Out Of Scope For V1
+### Future
+
+- Saved event history.
+- Basic dashboard.
+- Enhanced detection rules.
+- Improved parsing for common SOC log formats.
+- More sample logs and unit tests.
+
+## Out Of Scope For v0.1.0
 
 - PostgreSQL integration.
 - Dashboard.
