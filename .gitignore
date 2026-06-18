@@ -7,6 +7,10 @@ target/
 *.log
 !samples/*.log
 
+*.db
+*.db-shm
+*.db-wal
+
 *.tmp
 *.bak
 *.swp

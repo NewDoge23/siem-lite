@@ -30,6 +30,27 @@
     -fx-background-radius: 6px;
 }
 
+.tab-pane {
+    -fx-background-color: white;
+}
+
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: #e9eef8;
+}
+
+.tab {
+    -fx-background-color: #dfe7f5;
+}
+
+.tab:selected {
+    -fx-background-color: white;
+}
+
+.tab .tab-label {
+    -fx-text-fill: #27344f;
+    -fx-font-weight: 700;
+}
+
 .table-view {
     -fx-background-color: white;
     -fx-border-color: #d9e1ef;

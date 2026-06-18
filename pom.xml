@@ -5,7 +5,7 @@
 
     <groupId>com.portfolio</groupId>
     <artifactId>siem-lite</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0-SNAPSHOT</version>
     <name>SIEM Lite</name>
     <description>Desktop log analysis portfolio project built with Java 21 and JavaFX.</description>
 
@@ -26,6 +26,11 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>3.49.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
