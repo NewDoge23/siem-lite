@@ -66,6 +66,14 @@ Local data is stored at:
 %APPDATA%\SIEM Lite\data\siem-lite.db
 ```
 
+## Local Data / Privacy Note
+
+- SIEM Lite stores saved suspicious events locally in a SQLite database.
+- On Windows, the database is stored under `%APPDATA%\SIEM Lite\data\siem-lite.db`.
+- Saved records may include the original log line, parsed event metadata, imported file name, and local imported file path.
+- This version does not add cloud sync, telemetry, or remote upload.
+- Users can delete the local database file to clear saved events.
+
 ## v0.1.0 Features
 
 - JavaFX desktop interface.
