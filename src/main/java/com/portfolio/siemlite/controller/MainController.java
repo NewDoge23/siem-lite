@@ -40,6 +40,7 @@ public class MainController {
     private final ObservableList<SavedLogEvent> savedEvents = FXCollections.observableArrayList();
     private SavedEventService savedEventService;
     private String saveWarning = "";
+    private String loadWarning = "";
 
     @FXML
     private TextField searchField;
@@ -125,17 +126,18 @@ public class MainController {
 
         try {
             saveWarning = "";
+            loadWarning = "";
             List<LogEvent> parsedEvents = logParser.parse(selectedFile.toPath());
             detectionService.detectSuspiciousEvents(parsedEvents);
             allEvents.setAll(parsedEvents);
             applyFilters();
             SavedEventSaveResult saveResult = saveSuspiciousEvents(selectedFile.toPath(), parsedEvents);
-            loadSavedEvents();
+            loadWarning = loadSavedEvents();
             updateStatus(selectedFile.getName(), parsedEvents.size(), saveResult);
         } catch (IOException exception) {
             allEvents.clear();
             eventsTable.getItems().clear();
-            statusLabel.setText("Could not import file: " + exception.getMessage());
+            statusLabel.setText("Could not import file. Please check that the file is readable.");
         }
     }
 
@@ -184,10 +186,13 @@ public class MainController {
             Path databasePath = appDataPathService.getDatabasePath();
             databaseInitializer.initialize(databasePath);
             savedEventService = new SavedEventService(new SavedEventRepository(databasePath));
-            loadSavedEvents();
+            String warning = loadSavedEvents();
+            if (!warning.isBlank()) {
+                statusLabel.setText(warning);
+            }
         } catch (IOException | DatabaseException exception) {
             savedEventService = null;
-            statusLabel.setText("Local persistence unavailable: " + exception.getMessage());
+            statusLabel.setText("Local persistence unavailable. Saved Events will not be available.");
         }
     }
 
@@ -204,17 +209,18 @@ public class MainController {
         }
     }
 
-    private void loadSavedEvents() {
+    private String loadSavedEvents() {
         if (savedEventService == null) {
             savedEvents.clear();
-            return;
+            return "";
         }
 
         try {
             savedEvents.setAll(savedEventService.loadSavedEvents());
+            return "";
         } catch (DatabaseException exception) {
             savedEvents.clear();
-            statusLabel.setText("Could not load saved events: " + exception.getMessage());
+            return "Could not load saved events";
         }
     }
 
@@ -226,7 +232,8 @@ public class MainController {
                 suspiciousCount,
                 savedEventService != null,
                 saveResult,
-                saveWarning));
+                saveWarning,
+                loadWarning));
     }
 
     static String buildImportStatus(
@@ -235,7 +242,8 @@ public class MainController {
             long suspiciousCount,
             boolean autoSaveAvailable,
             SavedEventSaveResult saveResult,
-            String saveWarning) {
+            String saveWarning,
+            String loadWarning) {
         String status = "Imported file: " + fileName
                 + " | Events: " + eventCount
                 + " | Suspicious: " + suspiciousCount;
@@ -247,6 +255,10 @@ public class MainController {
         } else {
             status += " | Saved: " + saveResult.savedEvents()
                     + " | Duplicates skipped: " + saveResult.duplicateEvents();
+        }
+
+        if (loadWarning != null && !loadWarning.isBlank()) {
+            status += " | Load warning: " + loadWarning;
         }
 
         return status;
