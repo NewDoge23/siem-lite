@@ -96,17 +96,17 @@ Local data is stored at:
 
 ## Screenshots
 
-### Main screen
+### Saved Events persistence
 
-![Main screen](docs/screenshots/main-screen.png)
+Suspicious events are stored locally in SQLite and remain available after restarting the application.
 
-### Imported log
+![Saved Events persistence](docs/screenshots/v0.2-saved-events-persistence.png)
 
-![Imported log](docs/screenshots/imported-log.png)
+### Duplicate prevention
 
-### Filtered suspicious events
+Re-importing the same log file does not duplicate saved suspicious events. Existing records are skipped using a content hash.
 
-![Filtered suspicious events](docs/screenshots/filtered-suspicious-events.png)
+![Duplicate prevention](docs/screenshots/v0.2-duplicate-prevention.png)
 
 ## How To Run
 
