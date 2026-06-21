@@ -4,7 +4,7 @@
 ![JavaFX](https://img.shields.io/badge/JavaFX-21-blue)
 ![Maven](https://img.shields.io/badge/Build-Maven-red)
 ![Tests](https://img.shields.io/badge/Tests-JUnit%205-brightgreen)
-![Status](https://img.shields.io/badge/Status-v0.2.0--SNAPSHOT-yellow)
+![Status](https://img.shields.io/badge/Status-v0.2.0-yellow)
 
 SIEM Lite is a lightweight desktop application for basic log analysis. It allows users to import `.log` and `.txt` files, parse them line by line, detect suspicious events using simple hardcoded keywords, and filter the results in a JavaFX table.
 
@@ -25,8 +25,7 @@ See the full strategic roadmap in [docs/ROADMAP.md](docs/ROADMAP.md).
 ## Project Status
 
 **Type:** Portfolio project  
-**Stable release:** v0.1.0  
-**Current development version:** v0.2.0-SNAPSHOT  
+**Current version:** v0.2.0  
 **Production use:** Not intended for production use  
 **Focus:** Demonstrating basic SOC-style log triage concepts through a small Java desktop application.
 
@@ -50,7 +49,7 @@ The v0.1.0 release simulates a simple SOC-style log review flow:
 - SQLite
 - JUnit 5
 
-## v0.2.0-SNAPSHOT Features
+## v0.2.0 Features
 
 - Local SQLite persistence for suspicious events.
 - Automatic database initialization.
@@ -169,7 +168,7 @@ When a log is imported, suspicious events are saved automatically to SQLite. Rei
 - `v0.9.x`: Background mode, notifications, installer, QA, and release candidate hardening.
 - `v1.0.0`: Stable personal Windows SIEM release.
 
-## Out Of Scope For v0.2.0-SNAPSHOT
+## Out Of Scope For v0.2.0
 
 - PostgreSQL integration.
 - Dashboard.
