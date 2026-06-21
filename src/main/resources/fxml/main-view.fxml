@@ -6,6 +6,8 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
@@ -29,20 +31,43 @@
         </VBox>
     </top>
     <center>
-        <TableView fx:id="eventsTable" BorderPane.alignment="CENTER">
-            <columns>
-                <TableColumn fx:id="lineNumberColumn" text="#" prefWidth="70"/>
-                <TableColumn fx:id="timestampColumn" text="Timestamp" prefWidth="165"/>
-                <TableColumn fx:id="severityColumn" text="Severity" prefWidth="105"/>
-                <TableColumn fx:id="sourceColumn" text="Source" prefWidth="140"/>
-                <TableColumn fx:id="suspiciousColumn" text="Suspicious" prefWidth="110"/>
-                <TableColumn fx:id="keywordColumn" text="Keyword" prefWidth="120"/>
-                <TableColumn fx:id="messageColumn" text="Message" prefWidth="470"/>
-            </columns>
-            <columnResizePolicy>
-                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
-            </columnResizePolicy>
-        </TableView>
+        <TabPane BorderPane.alignment="CENTER" tabClosingPolicy="UNAVAILABLE">
+            <tabs>
+                <Tab text="Imported Events">
+                    <TableView fx:id="eventsTable">
+                        <columns>
+                            <TableColumn fx:id="lineNumberColumn" text="#" prefWidth="70"/>
+                            <TableColumn fx:id="timestampColumn" text="Timestamp" prefWidth="165"/>
+                            <TableColumn fx:id="severityColumn" text="Severity" prefWidth="105"/>
+                            <TableColumn fx:id="sourceColumn" text="Source" prefWidth="140"/>
+                            <TableColumn fx:id="suspiciousColumn" text="Suspicious" prefWidth="110"/>
+                            <TableColumn fx:id="keywordColumn" text="Keyword" prefWidth="120"/>
+                            <TableColumn fx:id="messageColumn" text="Message" prefWidth="470"/>
+                        </columns>
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                        </columnResizePolicy>
+                    </TableView>
+                </Tab>
+                <Tab text="Saved Events">
+                    <TableView fx:id="savedEventsTable">
+                        <columns>
+                            <TableColumn fx:id="savedAtColumn" text="Saved At" prefWidth="165"/>
+                            <TableColumn fx:id="savedFileColumn" text="File" prefWidth="150"/>
+                            <TableColumn fx:id="savedLineNumberColumn" text="#" prefWidth="70"/>
+                            <TableColumn fx:id="savedTimestampColumn" text="Timestamp" prefWidth="165"/>
+                            <TableColumn fx:id="savedSeverityColumn" text="Severity" prefWidth="105"/>
+                            <TableColumn fx:id="savedSourceColumn" text="Source" prefWidth="140"/>
+                            <TableColumn fx:id="savedKeywordColumn" text="Keyword" prefWidth="120"/>
+                            <TableColumn fx:id="savedMessageColumn" text="Message" prefWidth="430"/>
+                        </columns>
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                        </columnResizePolicy>
+                    </TableView>
+                </Tab>
+            </tabs>
+        </TabPane>
     </center>
     <bottom>
         <HBox spacing="10" BorderPane.alignment="CENTER_LEFT" styleClass="status-bar">

@@ -4,7 +4,7 @@
 ![JavaFX](https://img.shields.io/badge/JavaFX-21-blue)
 ![Maven](https://img.shields.io/badge/Build-Maven-red)
 ![Tests](https://img.shields.io/badge/Tests-JUnit%205-brightgreen)
-![Status](https://img.shields.io/badge/Status-v0.1.0%20Complete-success)
+![Status](https://img.shields.io/badge/Status-v0.2.0-yellow)
 
 SIEM Lite is a lightweight desktop application for basic log analysis. It allows users to import `.log` and `.txt` files, parse them line by line, detect suspicious events using simple hardcoded keywords, and filter the results in a JavaFX table.
 
@@ -25,7 +25,7 @@ See the full strategic roadmap in [docs/ROADMAP.md](docs/ROADMAP.md).
 ## Project Status
 
 **Type:** Portfolio project  
-**Current version:** v0.1.0  
+**Current version:** v0.2.0  
 **Production use:** Not intended for production use  
 **Focus:** Demonstrating basic SOC-style log triage concepts through a small Java desktop application.
 
@@ -46,7 +46,32 @@ The v0.1.0 release simulates a simple SOC-style log review flow:
 - Java 21
 - JavaFX
 - Maven
+- SQLite
 - JUnit 5
+
+## v0.2.0 Features
+
+- Local SQLite persistence for suspicious events.
+- Automatic database initialization.
+- Local database storage under the user's AppData directory.
+- Automatic save for suspicious events detected during log import.
+- Read-only `Saved Events` tab.
+- Duplicate protection when the same suspicious event is imported again.
+- Persistence tests using temporary SQLite databases.
+
+Local data is stored at:
+
+```text
+%APPDATA%\SIEM Lite\data\siem-lite.db
+```
+
+## Local Data / Privacy Note
+
+- SIEM Lite stores saved suspicious events locally in a SQLite database.
+- On Windows, the database is stored under `%APPDATA%\SIEM Lite\data\siem-lite.db`.
+- Saved records may include the original log line, parsed event metadata, imported file name, and local imported file path.
+- This version does not add cloud sync, telemetry, or remote upload.
+- Users can delete the local database file to clear saved events.
 
 ## v0.1.0 Features
 
@@ -70,17 +95,17 @@ The v0.1.0 release simulates a simple SOC-style log review flow:
 
 ## Screenshots
 
-### Main screen
+### Saved Events persistence
 
-![Main screen](docs/screenshots/main-screen.png)
+Suspicious events are stored locally in SQLite and remain available after restarting the application.
 
-### Imported log
+![Saved Events persistence](docs/screenshots/v0.2-saved-events-persistence.png)
 
-![Imported log](docs/screenshots/imported-log.png)
+### Duplicate prevention
 
-### Filtered suspicious events
+Re-importing the same log file does not duplicate saved suspicious events. Existing records are skipped using a content hash.
 
-![Filtered suspicious events](docs/screenshots/filtered-suspicious-events.png)
+![Duplicate prevention](docs/screenshots/v0.2-duplicate-prevention.png)
 
 ## How To Run
 
@@ -113,15 +138,18 @@ mvn clean test
 2. Click `Import Log`.
 3. Select `samples/sample-system.log`.
 4. Review the imported events in the table.
-5. Try text filters such as:
+5. Review automatically saved suspicious events in the `Saved Events` tab.
+6. Try text filters such as:
    - `admin`
    - `malware`
    - `unauthorized`
    - `bruteforce`
-6. Try severity filters such as:
+7. Try severity filters such as:
    - `ERROR`
    - `CRITICAL`
    - `WARN`
+
+When a log is imported, suspicious events are saved automatically to SQLite. Reimporting the same file skips duplicate suspicious events.
 
 ## Roadmap
 
@@ -140,12 +168,12 @@ mvn clean test
 - `v0.9.x`: Background mode, notifications, installer, QA, and release candidate hardening.
 - `v1.0.0`: Stable personal Windows SIEM release.
 
-## Out Of Scope For v0.1.0
+## Out Of Scope For v0.2.0
 
-- SQLite persistence.
 - PostgreSQL integration.
 - Dashboard.
-- Event history.
+- Advanced event history.
+- Saved event editing or deletion.
 - Configurable detection rules.
 - CSV/PDF export.
 - User login or role management.
