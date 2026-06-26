@@ -1,8 +1,12 @@
 package com.portfolio.siemlite.localization;
 
 import java.text.MessageFormat;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.LinkedHashSet;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 public class LocalizationService {
 
@@ -15,7 +19,13 @@ public class LocalizationService {
 
     public LocalizationService(LanguageOption language) {
         this.englishBundle = loadBundle(LanguageOption.defaultLanguage());
-        this.bundle = loadBundle(language == null ? LanguageOption.defaultLanguage() : language);
+        ResourceBundle selectedBundle = loadBundle(language == null ? LanguageOption.defaultLanguage() : language);
+        this.bundle = new FallbackResourceBundle(selectedBundle, englishBundle);
+    }
+
+    LocalizationService(ResourceBundle selectedBundle, ResourceBundle englishBundle) {
+        this.englishBundle = englishBundle;
+        this.bundle = new FallbackResourceBundle(selectedBundle, englishBundle);
     }
 
     public String get(String key) {
@@ -23,13 +33,11 @@ public class LocalizationService {
             return "";
         }
 
-        if (bundle.containsKey(key)) {
+        try {
             return bundle.getString(key);
+        } catch (MissingResourceException exception) {
+            return key;
         }
-        if (englishBundle.containsKey(key)) {
-            return englishBundle.getString(key);
-        }
-        return key;
     }
 
     public String format(String key, Object... arguments) {
@@ -48,6 +56,38 @@ public class LocalizationService {
                     BUNDLE_BASE_NAME,
                     LanguageOption.defaultLanguage().getLocale(),
                     NO_SYSTEM_FALLBACK);
+        }
+    }
+
+    private static final class FallbackResourceBundle extends ResourceBundle {
+
+        private final ResourceBundle selectedBundle;
+        private final ResourceBundle englishBundle;
+
+        private FallbackResourceBundle(ResourceBundle selectedBundle, ResourceBundle englishBundle) {
+            this.selectedBundle = selectedBundle;
+            this.englishBundle = englishBundle;
+        }
+
+        @Override
+        protected Object handleGetObject(String key) {
+            try {
+                return selectedBundle.getObject(key);
+            } catch (MissingResourceException exception) {
+                try {
+                    return englishBundle.getObject(key);
+                } catch (MissingResourceException fallbackException) {
+                    return key;
+                }
+            }
+        }
+
+        @Override
+        public Enumeration<String> getKeys() {
+            Set<String> keys = new LinkedHashSet<>();
+            selectedBundle.getKeys().asIterator().forEachRemaining(keys::add);
+            englishBundle.getKeys().asIterator().forEachRemaining(keys::add);
+            return Collections.enumeration(keys);
         }
     }
 }
