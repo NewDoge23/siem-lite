@@ -51,6 +51,12 @@
     -fx-font-weight: 700;
 }
 
+.toolbar-label {
+    -fx-text-fill: #27344f;
+    -fx-font-weight: 600;
+    -fx-padding: 7px 0 0 0;
+}
+
 .table-view {
     -fx-background-color: white;
     -fx-border-color: #d9e1ef;

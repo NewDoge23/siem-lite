@@ -33,4 +33,23 @@ class AppDataPathServiceTest {
         assertTrue(Files.exists(dataDirectory));
         assertTrue(Files.isDirectory(dataDirectory));
     }
+
+    @Test
+    void resolvesSettingsPathUnderConfigDirectory() {
+        AppDataPathService service = new AppDataPathService(tempDir);
+
+        Path settingsPath = service.getSettingsPath();
+
+        assertEquals(tempDir.resolve("SIEM Lite").resolve("config").resolve("settings.properties"), settingsPath);
+    }
+
+    @Test
+    void createsConfigDirectory() throws IOException {
+        AppDataPathService service = new AppDataPathService(tempDir);
+
+        Path configDirectory = service.createConfigDirectory();
+
+        assertTrue(Files.exists(configDirectory));
+        assertTrue(Files.isDirectory(configDirectory));
+    }
 }
