@@ -39,7 +39,9 @@ class BundleKeysTest {
             "status.importError",
             "status.persistenceUnavailable",
             "warning.saveSuspiciousEvents",
-            "warning.loadSavedEvents"
+            "warning.loadSavedEvents",
+            "value.yes",
+            "value.no"
     );
 
     @Test

@@ -17,6 +17,7 @@ import com.portfolio.siemlite.service.DetectionService;
 import com.portfolio.siemlite.service.EventFilterService;
 import com.portfolio.siemlite.service.SavedEventSaveResult;
 import com.portfolio.siemlite.service.SavedEventService;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -158,7 +159,8 @@ public class MainController {
         timestampColumn.setCellValueFactory(new PropertyValueFactory<>("timestamp"));
         severityColumn.setCellValueFactory(new PropertyValueFactory<>("severity"));
         sourceColumn.setCellValueFactory(new PropertyValueFactory<>("source"));
-        suspiciousColumn.setCellValueFactory(new PropertyValueFactory<>("suspiciousLabel"));
+        suspiciousColumn.setCellValueFactory(cellData -> new SimpleStringProperty(
+                localizationService.get(cellData.getValue().isSuspicious() ? "value.yes" : "value.no")));
         keywordColumn.setCellValueFactory(new PropertyValueFactory<>("matchedKeyword"));
         messageColumn.setCellValueFactory(new PropertyValueFactory<>("message"));
     }
