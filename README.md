@@ -6,7 +6,7 @@
 ![Tests](https://img.shields.io/badge/Tests-JUnit%205-brightgreen)
 ![Status](https://img.shields.io/badge/Status-v0.3.0-yellow)
 
-SIEM Lite is a lightweight desktop application for basic log analysis. It allows users to import `.log` and `.txt` files, parse them line by line, detect suspicious events using simple hardcoded keywords, and filter the results in a JavaFX table.
+SIEM Lite is a lightweight desktop application for local log analysis and basic SOC-style event triage. It helps users import log files, identify severity, flag suspicious events, persist findings locally, and use the interface in English or Spanish.
 
 This project was built as a cybersecurity/SOC portfolio project. The goal is to demonstrate a practical SOC Analyst Level 1 workflow, clean Java structure, and a small but extensible foundation for future improvements.
 
@@ -16,30 +16,18 @@ SIEM Lite aims to become a personal Windows SIEM for cybersecurity students, edu
 
 The project focuses on local Windows event monitoring, basic security analysis, educational explanations, and a simple desktop experience. It is not intended to replace enterprise SIEM platforms such as Splunk, Microsoft Sentinel, QRadar, or Wazuh.
 
-Planned capabilities include local SQLite persistence, Windows Event Log support, dashboard views, Learning Mode, Professional Mode, Knowledge Cards, Light/Dark/System themes, and multilingual UI support.
-
-Planned language support includes English as the base fallback language, with initial support for Spanish, Chinese, Hindi, and Arabic. Translation quality and RTL layout support will be improved progressively before `v1.0.0`.
+Future versions aim to add Windows Event Log support, dashboard views, Learning Mode, Professional Mode, Knowledge Cards, Light/Dark/System themes, broader multilingual UI support, and productization work toward an installable desktop app.
 
 See the full strategic roadmap in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Project Status
 
-**Type:** Portfolio project  
+**Type:** Portfolio / educational desktop project  
 **Current version:** v0.3.0  
 **Production use:** Not intended for production use  
-**Focus:** Demonstrating basic SOC-style log triage concepts through a small Java desktop application.
+**Focus:** Local log analysis, suspicious event persistence, and localization foundation.
 
 The current release is a public desktop version focused on local log analysis, suspicious event persistence, and localization foundation. It is not intended to be a full SIEM platform.
-
-## SOC / Portfolio Objective
-
-The v0.1.0 release simulates a simple SOC-style log review flow:
-
-- Load log evidence from a local file.
-- Identify basic event severity.
-- Flag potentially suspicious events.
-- Filter events by text or severity.
-- Keep the codebase simple enough to explain during a technical interview.
 
 ## Tech Stack
 
@@ -49,15 +37,40 @@ The v0.1.0 release simulates a simple SOC-style log review flow:
 - SQLite
 - JUnit 5
 
-## v0.2.0 Features
+## Current Features
 
-- Local SQLite persistence for suspicious events.
+### Log import and analysis
+
+- Import `.log` and `.txt` files.
+- Parse logs line by line.
+- Display line number, timestamp, severity, source, suspicious flag, matched keyword, and message.
+- Filter imported events by text.
+- Filter imported events by severity.
+
+### Suspicious event detection
+
+- Keyword-based suspicious activity detection.
+- Basic severity classification.
+- Matched keyword display.
+- Sample log file at `samples/sample-system.log`.
+
+Current suspicious keywords include:
+
+- `failed`
+- `denied`
+- `unauthorized`
+- `error`
+- `critical`
+- `malware`
+- `bruteforce`
+
+### SQLite persistence
+
+- Local SQLite database.
 - Automatic database initialization.
-- Local database storage under the user's AppData directory.
 - Automatic save for suspicious events detected during log import.
 - Read-only `Saved Events` tab.
-- Duplicate protection when the same suspicious event is imported again.
-- Persistence tests using temporary SQLite databases.
+- Duplicate prevention using a content hash.
 
 Local data is stored at:
 
@@ -65,48 +78,29 @@ Local data is stored at:
 %APPDATA%\SIEM Lite\data\siem-lite.db
 ```
 
-## v0.3.0 Localization Foundation
+### Localization foundation
 
-The `v0.3.0` release adds the first localization foundation for SIEM Lite.
-
-- Initial English and Spanish interface support.
-- Main UI labels, table headers, status messages, warnings, and dialogs externalized with Java `ResourceBundle`.
-- Simple language selector in the main interface.
-- Selected language stored locally under the user's AppData config directory.
+- English as the default and fallback language.
+- Initial Spanish support.
+- Java `ResourceBundle` based UI text externalization.
+- Language selector in the main interface.
+- Local language preference stored under the user's AppData config directory.
 - Saved language applied when the application starts.
-- Restart required to apply all interface changes in this foundation version.
-- Safe English fallback when a translation key is missing.
-- Existing SQLite persistence and `Saved Events` behavior from `v0.2.0` remain supported.
-
-## Local Data / Privacy Note
-
-- SIEM Lite stores saved suspicious events locally in a SQLite database.
-- On Windows, the database is stored under `%APPDATA%\SIEM Lite\data\siem-lite.db`.
-- Saved records may include the original log line, parsed event metadata, imported file name, and local imported file path.
-- This version does not add cloud sync, telemetry, or remote upload.
-- Users can delete the local database file to clear saved events.
-
-## v0.1.0 Features
-
-- JavaFX desktop interface.
-- Import `.log` and `.txt` files.
-- Generic line-by-line parser.
-- `LogEvent` model.
-- Event table with line number, timestamp, severity, source, suspicious flag, matched keyword, and message.
-- Simple keyword-based detection:
-  - `failed`
-  - `denied`
-  - `unauthorized`
-  - `error`
-  - `critical`
-  - `malware`
-  - `bruteforce`
-- Text filter.
-- Severity filter.
-- Sample log file at `samples/sample-system.log`.
-- Basic unit tests for parser, detection, and filtering services.
+- Restart required to apply all interface changes in v0.3.0.
 
 ## Screenshots
+
+### Spanish UI
+
+The main interface can load in Spanish using externalized ResourceBundle messages.
+
+![Spanish UI](docs/screenshots/v0.3-spanish-ui.png)
+
+### Localized import flow
+
+The log import flow remains functional with localized UI labels, table headers, status messages, and Yes/No suspicious indicators.
+
+![Localized import flow](docs/screenshots/v0.3-spanish-imported-events.png)
 
 ### Saved Events persistence
 
@@ -120,23 +114,14 @@ Re-importing the same log file does not duplicate saved suspicious events. Exist
 
 ![Duplicate prevention](docs/screenshots/v0.2-duplicate-prevention.png)
 
-### Language selector / restart required
+## Local Data / Privacy Note
 
-Language preference can be changed from the UI. In this foundation release, a restart is required to apply all interface changes.
-
-![Language selector / restart required](docs/screenshots/v0.3-language-restart-required.png)
-
-### Spanish UI
-
-The main interface can now load in Spanish using externalized ResourceBundle messages.
-
-![Spanish UI](docs/screenshots/v0.3-spanish-ui.png)
-
-### Localized import flow
-
-The log import flow remains functional with localized UI labels, table headers, status messages, and Yes/No suspicious indicators.
-
-![Localized import flow](docs/screenshots/v0.3-spanish-imported-events.png)
+- SIEM Lite stores saved suspicious events locally in a SQLite database.
+- On Windows, the database is stored under `%APPDATA%\SIEM Lite\data\siem-lite.db`.
+- The selected language preference is stored locally under `%APPDATA%\SIEM Lite\config\settings.properties`.
+- Saved records may include the original log line, parsed event metadata, imported file name, and local imported file path.
+- This version does not add cloud sync, telemetry, or remote upload.
+- Users can delete the local database file to clear saved events.
 
 ## How To Run
 
@@ -166,16 +151,19 @@ mvn clean test
 ## How To Test With The Sample Log
 
 1. Run the application with `mvn javafx:run`.
-2. Click `Import Log`.
-3. Select `samples/sample-system.log`.
-4. Review the imported events in the table.
-5. Review automatically saved suspicious events in the `Saved Events` tab.
-6. Try text filters such as:
+2. Optionally switch the language from the language selector.
+3. Restart the application if you changed the language.
+4. Click `Import Log`.
+5. Select `samples/sample-system.log`.
+6. Review the imported events in the table.
+7. Review automatically saved suspicious events in the `Saved Events` tab.
+8. Re-import the same sample file to confirm duplicate prevention.
+9. Try text filters such as:
    - `admin`
    - `malware`
    - `unauthorized`
    - `bruteforce`
-7. Try severity filters such as:
+10. Try severity filters such as:
    - `ERROR`
    - `CRITICAL`
    - `WARN`
@@ -186,8 +174,7 @@ When a log is imported, suspicious events are saved automatically to SQLite. Rei
 
 ### Near-term
 
-- `v0.2.x`: Local SQLite persistence and AppData settings foundation.
-- `v0.3.x`: Localization foundation, language selector, and event history.
+- `v0.3.x`: Localization foundation and event history improvements.
 - `v0.4.x`: Local Windows Event Log support.
 - `v0.5.x`: Windows-focused detection rules and theme architecture.
 
@@ -199,15 +186,27 @@ When a log is imported, suspicious events are saved automatically to SQLite. Rei
 - `v0.9.x`: Background mode, notifications, installer, QA, and release candidate hardening.
 - `v1.0.0`: Stable personal Windows SIEM release.
 
-## Out Of Scope For v0.2.0
+## Current Limitations
 
-- PostgreSQL integration.
-- Dashboard.
-- Advanced event history.
-- Saved event editing or deletion.
-- Configurable detection rules.
-- CSV/PDF export.
-- User login or role management.
+SIEM Lite is still a local desktop application for learning and portfolio purposes.
+
+The current version does not include:
+
+- Windows Event Log integration.
+- Real-time monitoring.
+- Dashboards or alerting.
+- User accounts or roles.
+- Enterprise SIEM integrations.
+- Live language switching without restart.
+
+## Release History
+
+- `v0.1.0` - Initial Portfolio Release
+  - Basic JavaFX log import, parsing, filtering, and suspicious event detection.
+- `v0.2.0` - SQLite Persistence
+  - Local SQLite persistence, `Saved Events` tab, and duplicate prevention.
+- `v0.3.0` - Localization Foundation
+  - English/Spanish foundation, language selector, saved language preference, and ResourceBundle fallback.
 
 ## License
 
