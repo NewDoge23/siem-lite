@@ -4,7 +4,7 @@
 ![JavaFX](https://img.shields.io/badge/JavaFX-21-blue)
 ![Maven](https://img.shields.io/badge/Build-Maven-red)
 ![Tests](https://img.shields.io/badge/Tests-JUnit%205-brightgreen)
-![Status](https://img.shields.io/badge/Status-v0.2.0-yellow)
+![Status](https://img.shields.io/badge/Status-v0.3.0-yellow)
 
 SIEM Lite is a lightweight desktop application for basic log analysis. It allows users to import `.log` and `.txt` files, parse them line by line, detect suspicious events using simple hardcoded keywords, and filter the results in a JavaFX table.
 
@@ -25,11 +25,11 @@ See the full strategic roadmap in [docs/ROADMAP.md](docs/ROADMAP.md).
 ## Project Status
 
 **Type:** Portfolio project  
-**Current version:** v0.2.0  
+**Current version:** v0.3.0  
 **Production use:** Not intended for production use  
 **Focus:** Demonstrating basic SOC-style log triage concepts through a small Java desktop application.
 
-The current release is a public desktop version focused on local log analysis and suspicious event persistence. It is not intended to be a full SIEM platform.
+The current release is a public desktop version focused on local log analysis, suspicious event persistence, and localization foundation. It is not intended to be a full SIEM platform.
 
 ## SOC / Portfolio Objective
 
@@ -67,7 +67,7 @@ Local data is stored at:
 
 ## v0.3.0 Localization Foundation
 
-The `v0.3.0` branch prepares the first localization foundation for SIEM Lite. This work is not a final public release until it is merged, tagged, and published.
+The `v0.3.0` release adds the first localization foundation for SIEM Lite.
 
 - Initial English and Spanish interface support.
 - Main UI labels, table headers, status messages, warnings, and dialogs externalized with Java `ResourceBundle`.
