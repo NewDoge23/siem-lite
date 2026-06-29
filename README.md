@@ -65,6 +65,19 @@ Local data is stored at:
 %APPDATA%\SIEM Lite\data\siem-lite.db
 ```
 
+## v0.3.0-SNAPSHOT Localization Foundation
+
+The `v0.3.0-SNAPSHOT` branch adds the first localization foundation for SIEM Lite. This work is not a final public release yet.
+
+- Initial English and Spanish interface support.
+- Main UI labels, table headers, status messages, warnings, and dialogs externalized with Java `ResourceBundle`.
+- Simple language selector in the main interface.
+- Selected language stored locally under the user's AppData config directory.
+- Saved language applied when the application starts.
+- Restart required to apply all interface changes in this foundation version.
+- Safe English fallback when a translation key is missing.
+- Existing SQLite persistence and `Saved Events` behavior from `v0.2.0` remain supported.
+
 ## Local Data / Privacy Note
 
 - SIEM Lite stores saved suspicious events locally in a SQLite database.
@@ -106,6 +119,24 @@ Suspicious events are stored locally in SQLite and remain available after restar
 Re-importing the same log file does not duplicate saved suspicious events. Existing records are skipped using a content hash.
 
 ![Duplicate prevention](docs/screenshots/v0.2-duplicate-prevention.png)
+
+### Language selector / restart required
+
+Language preference can be changed from the UI. In this foundation release, a restart is required to apply all interface changes.
+
+![Language selector / restart required](docs/screenshots/v0.3-language-restart-required.png)
+
+### Spanish UI
+
+The main interface can now load in Spanish using externalized ResourceBundle messages.
+
+![Spanish UI](docs/screenshots/v0.3-spanish-ui.png)
+
+### Localized import flow
+
+The log import flow remains functional with localized UI labels, table headers, status messages, and Yes/No suspicious indicators.
+
+![Localized import flow](docs/screenshots/v0.3-spanish-imported-events.png)
 
 ## How To Run
 
