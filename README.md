@@ -29,7 +29,7 @@ See the full strategic roadmap in [docs/ROADMAP.md](docs/ROADMAP.md).
 **Production use:** Not intended for production use  
 **Focus:** Demonstrating basic SOC-style log triage concepts through a small Java desktop application.
 
-The current release is a first public functional version. It is not intended to be a full SIEM platform.
+The current release is a public desktop version focused on local log analysis and suspicious event persistence. It is not intended to be a full SIEM platform.
 
 ## SOC / Portfolio Objective
 
@@ -65,9 +65,9 @@ Local data is stored at:
 %APPDATA%\SIEM Lite\data\siem-lite.db
 ```
 
-## v0.3.0-SNAPSHOT Localization Foundation
+## v0.3.0 Localization Foundation
 
-The `v0.3.0-SNAPSHOT` branch adds the first localization foundation for SIEM Lite. This work is not a final public release yet.
+The `v0.3.0` branch prepares the first localization foundation for SIEM Lite. This work is not a final public release until it is merged, tagged, and published.
 
 - Initial English and Spanish interface support.
 - Main UI labels, table headers, status messages, warnings, and dialogs externalized with Java `ResourceBundle`.
