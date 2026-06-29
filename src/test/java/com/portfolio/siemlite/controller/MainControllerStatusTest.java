@@ -1,11 +1,15 @@
 package com.portfolio.siemlite.controller;
 
+import com.portfolio.siemlite.localization.LanguageOption;
+import com.portfolio.siemlite.localization.LocalizationService;
 import com.portfolio.siemlite.service.SavedEventSaveResult;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class MainControllerStatusTest {
+
+    private final LocalizationService localizationService = new LocalizationService(LanguageOption.ENGLISH);
 
     @Test
     void includesSaveSummaryWhenPersistenceSucceeds() {
@@ -16,7 +20,8 @@ class MainControllerStatusTest {
                 true,
                 new SavedEventSaveResult(7, 5, 2),
                 "",
-                "");
+                "",
+                localizationService);
 
         assertEquals(
                 "Imported file: sample-system.log | Events: 13 | Suspicious: 7 | Saved: 5 | Duplicates skipped: 2",
@@ -32,7 +37,8 @@ class MainControllerStatusTest {
                 true,
                 new SavedEventSaveResult(0, 0, 0),
                 "Could not save suspicious events",
-                "");
+                "",
+                localizationService);
 
         assertEquals(
                 "Imported file: sample-system.log | Events: 13 | Suspicious: 7 | Save warning: Could not save suspicious events",
@@ -48,7 +54,8 @@ class MainControllerStatusTest {
                 true,
                 new SavedEventSaveResult(7, 7, 0),
                 "",
-                "Could not load saved events");
+                "Could not load saved events",
+                localizationService);
 
         assertEquals(
                 "Imported file: sample-system.log | Events: 13 | Suspicious: 7 | Saved: 7 | Duplicates skipped: 0 | Load warning: Could not load saved events",
@@ -64,7 +71,8 @@ class MainControllerStatusTest {
                 true,
                 new SavedEventSaveResult(0, 0, 0),
                 "Could not save suspicious events",
-                "Could not load saved events");
+                "Could not load saved events",
+                localizationService);
 
         assertEquals(
                 "Imported file: sample-system.log | Events: 13 | Suspicious: 7 | Save warning: Could not save suspicious events | Load warning: Could not load saved events",

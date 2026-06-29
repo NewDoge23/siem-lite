@@ -1,6 +1,10 @@
 package com.portfolio.siemlite.controller;
 
 import com.portfolio.siemlite.config.AppDataPathService;
+import com.portfolio.siemlite.config.SettingsService;
+import com.portfolio.siemlite.config.UserSettings;
+import com.portfolio.siemlite.localization.LanguageOption;
+import com.portfolio.siemlite.localization.LocalizationService;
 import com.portfolio.siemlite.model.LogEvent;
 import com.portfolio.siemlite.model.SavedLogEvent;
 import com.portfolio.siemlite.model.Severity;
@@ -13,6 +17,7 @@ import com.portfolio.siemlite.service.DetectionService;
 import com.portfolio.siemlite.service.EventFilterService;
 import com.portfolio.siemlite.service.SavedEventSaveResult;
 import com.portfolio.siemlite.service.SavedEventService;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -32,6 +37,7 @@ import java.util.List;
 public class MainController {
 
     private final AppDataPathService appDataPathService = new AppDataPathService();
+    private final SettingsService settingsService = new SettingsService(appDataPathService);
     private final DatabaseInitializer databaseInitializer = new DatabaseInitializer();
     private final LogParser logParser = new GenericLogParser();
     private final DetectionService detectionService = new DetectionService();
@@ -39,6 +45,7 @@ public class MainController {
     private final ObservableList<LogEvent> allEvents = FXCollections.observableArrayList();
     private final ObservableList<SavedLogEvent> savedEvents = FXCollections.observableArrayList();
     private SavedEventService savedEventService;
+    private LocalizationService localizationService;
     private String saveWarning = "";
     private String loadWarning = "";
 
@@ -46,7 +53,10 @@ public class MainController {
     private TextField searchField;
 
     @FXML
-    private ComboBox<String> severityComboBox;
+    private ComboBox<SeverityFilterOption> severityComboBox;
+
+    @FXML
+    private ComboBox<LanguageOption> languageComboBox;
 
     @FXML
     private TableView<LogEvent> eventsTable;
@@ -104,8 +114,11 @@ public class MainController {
 
     @FXML
     private void initialize() {
+        UserSettings userSettings = settingsService.load();
+        localizationService = new LocalizationService(userSettings.language());
         configureTable();
         configureSavedEventsTable();
+        configureLanguageSelector(userSettings.language());
         configureFilters();
         eventsTable.setItems(allEvents);
         savedEventsTable.setItems(savedEvents);
@@ -115,9 +128,9 @@ public class MainController {
     @FXML
     private void onImportLog() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Import Log File");
+        fileChooser.setTitle(localizationService.get("dialog.import.title"));
         fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Log files", "*.log", "*.txt"));
+                new FileChooser.ExtensionFilter(localizationService.get("dialog.import.extension"), "*.log", "*.txt"));
 
         File selectedFile = fileChooser.showOpenDialog(eventsTable.getScene().getWindow());
         if (selectedFile == null) {
@@ -137,7 +150,7 @@ public class MainController {
         } catch (IOException exception) {
             allEvents.clear();
             eventsTable.getItems().clear();
-            statusLabel.setText("Could not import file. Please check that the file is readable.");
+            statusLabel.setText(localizationService.get("status.importError"));
         }
     }
 
@@ -146,7 +159,8 @@ public class MainController {
         timestampColumn.setCellValueFactory(new PropertyValueFactory<>("timestamp"));
         severityColumn.setCellValueFactory(new PropertyValueFactory<>("severity"));
         sourceColumn.setCellValueFactory(new PropertyValueFactory<>("source"));
-        suspiciousColumn.setCellValueFactory(new PropertyValueFactory<>("suspiciousLabel"));
+        suspiciousColumn.setCellValueFactory(cellData -> new SimpleStringProperty(
+                localizationService.get(cellData.getValue().isSuspicious() ? "value.yes" : "value.no")));
         keywordColumn.setCellValueFactory(new PropertyValueFactory<>("matchedKeyword"));
         messageColumn.setCellValueFactory(new PropertyValueFactory<>("message"));
     }
@@ -164,20 +178,45 @@ public class MainController {
 
     private void configureFilters() {
         severityComboBox.setItems(FXCollections.observableArrayList(
-                "All", Severity.INFO.name(), Severity.WARN.name(), Severity.ERROR.name(),
-                Severity.CRITICAL.name(), Severity.UNKNOWN.name()));
+                new SeverityFilterOption(localizationService.get("filter.severity.all"), null),
+                new SeverityFilterOption(Severity.INFO.name(), Severity.INFO),
+                new SeverityFilterOption(Severity.WARN.name(), Severity.WARN),
+                new SeverityFilterOption(Severity.ERROR.name(), Severity.ERROR),
+                new SeverityFilterOption(Severity.CRITICAL.name(), Severity.CRITICAL),
+                new SeverityFilterOption(Severity.UNKNOWN.name(), Severity.UNKNOWN)));
         severityComboBox.getSelectionModel().selectFirst();
 
         searchField.textProperty().addListener((observable, oldValue, newValue) -> applyFilters());
         severityComboBox.valueProperty().addListener((observable, oldValue, newValue) -> applyFilters());
     }
 
+    private void configureLanguageSelector(LanguageOption selectedLanguage) {
+        languageComboBox.setItems(FXCollections.observableArrayList(LanguageOption.supportedLanguages()));
+        languageComboBox.getSelectionModel().select(selectedLanguage);
+        languageComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null || newValue == oldValue) {
+                return;
+            }
+
+            try {
+                settingsService.save(new UserSettings(newValue));
+                localizationService = new LocalizationService(newValue);
+                statusLabel.setText(localizationService.get("language.restartRequired"));
+            } catch (IllegalStateException exception) {
+                statusLabel.setText(localizationService.get("language.saveError"));
+            }
+        });
+    }
+
     private void applyFilters() {
         String searchText = searchField.getText();
-        String selectedSeverity = severityComboBox.getValue();
-        List<LogEvent> filteredEvents = eventFilterService.filter(allEvents, searchText, selectedSeverity);
+        SeverityFilterOption selectedSeverity = severityComboBox.getValue();
+        String severityValue = selectedSeverity == null || selectedSeverity.severity() == null
+                ? "All"
+                : selectedSeverity.severity().name();
+        List<LogEvent> filteredEvents = eventFilterService.filter(allEvents, searchText, severityValue);
         eventsTable.setItems(FXCollections.observableArrayList(filteredEvents));
-        statusLabel.setText("Visible events: " + filteredEvents.size() + " / " + allEvents.size());
+        statusLabel.setText(localizationService.format("status.visibleEvents", filteredEvents.size(), allEvents.size()));
     }
 
     private void initializePersistence() {
@@ -192,7 +231,7 @@ public class MainController {
             }
         } catch (IOException | DatabaseException exception) {
             savedEventService = null;
-            statusLabel.setText("Local persistence unavailable. Saved Events will not be available.");
+            statusLabel.setText(localizationService.get("status.persistenceUnavailable"));
         }
     }
 
@@ -204,7 +243,7 @@ public class MainController {
         try {
             return savedEventService.saveSuspiciousEvents(parsedEvents, importedFilePath);
         } catch (DatabaseException exception) {
-            saveWarning = "Could not save suspicious events";
+            saveWarning = localizationService.get("warning.saveSuspiciousEvents");
             return new SavedEventSaveResult(0, 0, 0);
         }
     }
@@ -220,7 +259,7 @@ public class MainController {
             return "";
         } catch (DatabaseException exception) {
             savedEvents.clear();
-            return "Could not load saved events";
+            return localizationService.get("warning.loadSavedEvents");
         }
     }
 
@@ -233,7 +272,8 @@ public class MainController {
                 savedEventService != null,
                 saveResult,
                 saveWarning,
-                loadWarning));
+                loadWarning,
+                localizationService));
     }
 
     static String buildImportStatus(
@@ -243,24 +283,37 @@ public class MainController {
             boolean autoSaveAvailable,
             SavedEventSaveResult saveResult,
             String saveWarning,
-            String loadWarning) {
-        String status = "Imported file: " + fileName
-                + " | Events: " + eventCount
-                + " | Suspicious: " + suspiciousCount;
+            String loadWarning,
+            LocalizationService localizationService) {
+        String status = localizationService.format(
+                "status.importedFile",
+                fileName,
+                eventCount,
+                suspiciousCount);
 
         if (saveWarning != null && !saveWarning.isBlank()) {
-            status += " | Save warning: " + saveWarning;
+            status += " | " + localizationService.format("status.saveWarning", saveWarning);
         } else if (!autoSaveAvailable) {
-            status += " | Auto-save unavailable";
+            status += " | " + localizationService.get("status.autoSaveUnavailable");
         } else {
-            status += " | Saved: " + saveResult.savedEvents()
-                    + " | Duplicates skipped: " + saveResult.duplicateEvents();
+            status += " | " + localizationService.format(
+                    "status.savedSummary",
+                    saveResult.savedEvents(),
+                    saveResult.duplicateEvents());
         }
 
         if (loadWarning != null && !loadWarning.isBlank()) {
-            status += " | Load warning: " + loadWarning;
+            status += " | " + localizationService.format("status.loadWarning", loadWarning);
         }
 
         return status;
+    }
+
+    private record SeverityFilterOption(String label, Severity severity) {
+
+        @Override
+        public String toString() {
+            return label;
+        }
     }
 }

@@ -4,7 +4,7 @@
 ![JavaFX](https://img.shields.io/badge/JavaFX-21-blue)
 ![Maven](https://img.shields.io/badge/Build-Maven-red)
 ![Tests](https://img.shields.io/badge/Tests-JUnit%205-brightgreen)
-![Status](https://img.shields.io/badge/Status-v0.2.0-yellow)
+![Status](https://img.shields.io/badge/Status-v0.3.0-yellow)
 
 SIEM Lite is a lightweight desktop application for basic log analysis. It allows users to import `.log` and `.txt` files, parse them line by line, detect suspicious events using simple hardcoded keywords, and filter the results in a JavaFX table.
 
@@ -25,11 +25,11 @@ See the full strategic roadmap in [docs/ROADMAP.md](docs/ROADMAP.md).
 ## Project Status
 
 **Type:** Portfolio project  
-**Current version:** v0.2.0  
+**Current version:** v0.3.0  
 **Production use:** Not intended for production use  
 **Focus:** Demonstrating basic SOC-style log triage concepts through a small Java desktop application.
 
-The current release is a first public functional version. It is not intended to be a full SIEM platform.
+The current release is a public desktop version focused on local log analysis, suspicious event persistence, and localization foundation. It is not intended to be a full SIEM platform.
 
 ## SOC / Portfolio Objective
 
@@ -64,6 +64,19 @@ Local data is stored at:
 ```text
 %APPDATA%\SIEM Lite\data\siem-lite.db
 ```
+
+## v0.3.0 Localization Foundation
+
+The `v0.3.0` release adds the first localization foundation for SIEM Lite.
+
+- Initial English and Spanish interface support.
+- Main UI labels, table headers, status messages, warnings, and dialogs externalized with Java `ResourceBundle`.
+- Simple language selector in the main interface.
+- Selected language stored locally under the user's AppData config directory.
+- Saved language applied when the application starts.
+- Restart required to apply all interface changes in this foundation version.
+- Safe English fallback when a translation key is missing.
+- Existing SQLite persistence and `Saved Events` behavior from `v0.2.0` remain supported.
 
 ## Local Data / Privacy Note
 
@@ -106,6 +119,24 @@ Suspicious events are stored locally in SQLite and remain available after restar
 Re-importing the same log file does not duplicate saved suspicious events. Existing records are skipped using a content hash.
 
 ![Duplicate prevention](docs/screenshots/v0.2-duplicate-prevention.png)
+
+### Language selector / restart required
+
+Language preference can be changed from the UI. In this foundation release, a restart is required to apply all interface changes.
+
+![Language selector / restart required](docs/screenshots/v0.3-language-restart-required.png)
+
+### Spanish UI
+
+The main interface can now load in Spanish using externalized ResourceBundle messages.
+
+![Spanish UI](docs/screenshots/v0.3-spanish-ui.png)
+
+### Localized import flow
+
+The log import flow remains functional with localized UI labels, table headers, status messages, and Yes/No suspicious indicators.
+
+![Localized import flow](docs/screenshots/v0.3-spanish-imported-events.png)
 
 ## How To Run
 
