@@ -61,6 +61,7 @@ public class WindowsEventLogImportService {
                 commandResult.logsQueried(),
                 commandResult.logsWithData(),
                 commandResult.logsSkipped(),
+                commandResult.metadataComplete(),
                 commandResult.warnings(),
                 commandResult.capReached(),
                 commandResult.timedOut());

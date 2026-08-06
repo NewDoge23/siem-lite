@@ -9,7 +9,8 @@ public record WindowsEventLogImportResult(
         int logsConsulted,
         int logsWithEvents,
         int skippedLogs,
-        List<String> warnings,
+        boolean metadataComplete,
+        List<WindowsEventLogWarningCode> warnings,
         boolean reachedCap,
         boolean timedOut) {
 

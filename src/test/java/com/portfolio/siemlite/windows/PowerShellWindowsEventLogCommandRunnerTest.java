@@ -41,8 +41,9 @@ class PowerShellWindowsEventLogCommandRunnerTest {
         assertEquals(2, result.logsQueried());
         assertEquals(1, result.logsWithData());
         assertEquals(1, result.logsSkipped());
-        assertTrue(result.warnings().contains(PowerShellWindowsEventLogCommandRunner.WARNING_INVALID_OUTPUT));
-        assertTrue(result.warnings().contains(PowerShellWindowsEventLogCommandRunner.WARNING_SKIPPED_LOGS));
+        assertTrue(result.metadataComplete());
+        assertTrue(result.warnings().contains(WindowsEventLogWarningCode.INVALID_NDJSON));
+        assertTrue(result.warnings().contains(WindowsEventLogWarningCode.LOG_SKIPPED));
         assertFalse(result.timedOut());
         assertEquals("powershell.exe", capturedCommand.get().getFirst());
         assertTrue(capturedCommand.get().contains("-NoProfile"));
@@ -60,38 +61,48 @@ class PowerShellWindowsEventLogCommandRunnerTest {
 
         WindowsEventLogCommandResult result = runner.run(query(1_024));
 
-        assertTrue(result.warnings().contains(PowerShellWindowsEventLogCommandRunner.WARNING_COMMAND_FAILED));
-        assertTrue(result.warnings().stream().noneMatch(warning -> warning.contains("private")));
-        assertTrue(result.warnings().stream().noneMatch(warning -> warning.contains("script.ps1")));
+        assertTrue(result.metadataComplete());
+        assertTrue(result.warnings().contains(WindowsEventLogWarningCode.NON_ZERO_EXIT));
+        assertTrue(result.warnings().contains(WindowsEventLogWarningCode.PROCESS_ERROR_OUTPUT));
+        assertEquals(2, result.warnings().size());
     }
 
     @Test
-    void marksTimedOutProcessWithoutExposingProcessDetails() {
+    void preservesPartialEventsAndMarksMetadataIncompleteOnTimeoutWithoutSummary() {
         String stdout = """
-                {"type":"summary","logsQueried":1,"logsWithData":0,"logsSkipped":0,"capReached":false}
+                {"type":"event","timestamp":"2026-08-06T12:00:00Z","level":2,"logName":"System","message":"Failed login"}
                 """;
         PowerShellWindowsEventLogCommandRunner runner = runner(
                 command -> new FakeProcess(stdout, "", false, 0));
 
         WindowsEventLogCommandResult result = runner.run(query(1_024));
 
+        assertEquals(1, result.events().size());
+        assertFalse(result.metadataComplete());
+        assertEquals(0, result.logsQueried());
         assertTrue(result.timedOut());
-        assertTrue(result.warnings().contains(PowerShellWindowsEventLogCommandRunner.WARNING_TIMED_OUT));
+        assertTrue(result.warnings().contains(WindowsEventLogWarningCode.TIMEOUT));
+        assertTrue(result.warnings().contains(WindowsEventLogWarningCode.SUMMARY_MISSING));
     }
 
     @Test
-    void capsCapturedStdoutAndContinuesDrainingTheStream() {
-        String stdout = """
-                {"type":"event","timestamp":"2026-08-06T12:00:00Z","level":4,"logName":"Application"}
-                {"type":"summary","logsQueried":1,"logsWithData":1,"logsSkipped":0,"capReached":false}
-                """;
+    void preservesCompleteEventsBeforeStdoutCapAndMarksMetadataIncomplete() {
+        String eventLine =
+                "{\"type\":\"event\",\"timestamp\":\"2026-08-06T12:00:00Z\",\"level\":4,\"logName\":\"Application\"}";
+        String summaryLine =
+                "{\"type\":\"summary\",\"logsQueried\":1,\"logsWithData\":1,\"logsSkipped\":0,\"capReached\":false}";
+        String stdout = eventLine + System.lineSeparator() + summaryLine;
         PowerShellWindowsEventLogCommandRunner runner = runner(
                 command -> new FakeProcess(stdout, "", true, 0));
 
-        WindowsEventLogCommandResult result = runner.run(query(32));
+        WindowsEventLogCommandResult result = runner.run(
+                query(eventLine.getBytes(StandardCharsets.UTF_8).length));
 
+        assertEquals(1, result.events().size());
+        assertFalse(result.metadataComplete());
         assertTrue(result.capReached());
-        assertTrue(result.warnings().contains(PowerShellWindowsEventLogCommandRunner.WARNING_OUTPUT_LIMIT));
+        assertTrue(result.warnings().contains(WindowsEventLogWarningCode.STDOUT_CAP_REACHED));
+        assertTrue(result.warnings().contains(WindowsEventLogWarningCode.SUMMARY_MISSING));
     }
 
     @Test
@@ -104,9 +115,9 @@ class PowerShellWindowsEventLogCommandRunnerTest {
 
         assertTrue(result.events().isEmpty());
         assertEquals(
-                List.of(PowerShellWindowsEventLogCommandRunner.WARNING_START_FAILED),
+                List.of(WindowsEventLogWarningCode.PROCESS_START_FAILED),
                 result.warnings());
-        assertTrue(result.warnings().stream().noneMatch(warning -> warning.contains("sensitive")));
+        assertFalse(result.metadataComplete());
     }
 
     private PowerShellWindowsEventLogCommandRunner runner(

@@ -36,7 +36,8 @@ class WindowsEventLogImportServiceTest {
                     3,
                     2,
                     1,
-                    List.of("Some Windows Event Logs could not be read."),
+                    true,
+                    List.of(WindowsEventLogWarningCode.LOG_SKIPPED),
                     true,
                     true);
         };
@@ -50,7 +51,8 @@ class WindowsEventLogImportServiceTest {
         assertEquals(3, result.logsConsulted());
         assertEquals(2, result.logsWithEvents());
         assertEquals(1, result.skippedLogs());
-        assertEquals(List.of("Some Windows Event Logs could not be read."), result.warnings());
+        assertTrue(result.metadataComplete());
+        assertEquals(List.of(WindowsEventLogWarningCode.LOG_SKIPPED), result.warnings());
         assertTrue(result.reachedCap());
         assertTrue(result.timedOut());
 
@@ -78,7 +80,7 @@ class WindowsEventLogImportServiceTest {
     @Test
     void returnsControlledEmptyResultWhenRunnerReportsStartFailure() {
         WindowsEventLogCommandRunner fakeRunner = query ->
-                WindowsEventLogCommandResult.empty("The Windows Event Log command could not be started.");
+                WindowsEventLogCommandResult.empty(WindowsEventLogWarningCode.PROCESS_START_FAILED);
         WindowsEventLogImportService service = new WindowsEventLogImportService(fakeRunner);
 
         WindowsEventLogImportResult result = service.importEvents(WindowsEventLogQuery.last24Hours(
@@ -90,11 +92,52 @@ class WindowsEventLogImportServiceTest {
         assertEquals(0, result.logsConsulted());
         assertEquals(0, result.logsWithEvents());
         assertEquals(0, result.skippedLogs());
+        assertFalse(result.metadataComplete());
         assertEquals(
-                List.of("The Windows Event Log command could not be started."),
+                List.of(WindowsEventLogWarningCode.PROCESS_START_FAILED),
                 result.warnings());
         assertFalse(result.reachedCap());
         assertFalse(result.timedOut());
+    }
+
+    @Test
+    void keepsDetectionAndStructuredWarningsForPartialResultWithoutSummary() {
+        WindowsEventLogEntry suspiciousEntry = entry(
+                "2026-08-06T12:00:00Z", 2, "Failed login detected", 20L);
+        WindowsEventLogCommandRunner fakeRunner = query -> new WindowsEventLogCommandResult(
+                List.of(suspiciousEntry),
+                0,
+                0,
+                0,
+                false,
+                List.of(
+                        WindowsEventLogWarningCode.SUMMARY_MISSING,
+                        WindowsEventLogWarningCode.TIMEOUT),
+                false,
+                true);
+        WindowsEventLogImportService service = new WindowsEventLogImportService(fakeRunner);
+
+        WindowsEventLogImportResult result = service.importEvents(WindowsEventLogQuery.last24Hours(
+                Clock.fixed(Instant.parse("2026-08-06T13:00:00Z"), ZoneOffset.UTC)));
+
+        assertEquals(1, result.totalEvents());
+        assertEquals(1, result.suspiciousEvents());
+        assertFalse(result.metadataComplete());
+        assertEquals(0, result.logsConsulted());
+        assertEquals(0, result.logsWithEvents());
+        assertEquals(0, result.skippedLogs());
+        assertEquals(
+                List.of(
+                        WindowsEventLogWarningCode.SUMMARY_MISSING,
+                        WindowsEventLogWarningCode.TIMEOUT),
+                result.warnings());
+        assertTrue(result.timedOut());
+        assertSame(suspiciousEntry, result.events().getFirst().originalEntry());
+        assertTrue(result.events().getFirst().logEvent().isSuspicious());
+        assertEquals(1, result.events().getFirst().logEvent().getLineNumber());
+        assertEquals(
+                WindowsEventLogIdentity.from(suspiciousEntry),
+                result.events().getFirst().identity());
     }
 
     private WindowsEventLogEntry entry(String timestamp, Integer level, String message, Long recordId) {

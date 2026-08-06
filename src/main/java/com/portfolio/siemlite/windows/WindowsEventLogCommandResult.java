@@ -1,13 +1,15 @@
 package com.portfolio.siemlite.windows;
 
 import java.util.List;
+import java.util.Objects;
 
 public record WindowsEventLogCommandResult(
         List<WindowsEventLogEntry> events,
         int logsQueried,
         int logsWithData,
         int logsSkipped,
-        List<String> warnings,
+        boolean metadataComplete,
+        List<WindowsEventLogWarningCode> warnings,
         boolean capReached,
         boolean timedOut) {
 
@@ -23,13 +25,14 @@ public record WindowsEventLogCommandResult(
         }
     }
 
-    public static WindowsEventLogCommandResult empty(String warning) {
+    public static WindowsEventLogCommandResult empty(WindowsEventLogWarningCode warning) {
         return new WindowsEventLogCommandResult(
                 List.of(),
                 0,
                 0,
                 0,
-                warning == null || warning.isBlank() ? List.of() : List.of(warning),
+                false,
+                List.of(Objects.requireNonNull(warning, "warning")),
                 false,
                 false);
     }

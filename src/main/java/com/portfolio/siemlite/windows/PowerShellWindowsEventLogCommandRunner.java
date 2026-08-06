@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -30,15 +31,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
 public class PowerShellWindowsEventLogCommandRunner implements WindowsEventLogCommandRunner {
-
-    static final String WARNING_NOT_WINDOWS = "Windows Event Logs are only available on Windows.";
-    static final String WARNING_START_FAILED = "The Windows Event Log command could not be started.";
-    static final String WARNING_INTERRUPTED = "The Windows Event Log command was interrupted.";
-    static final String WARNING_TIMED_OUT = "The Windows Event Log command reached its safety timeout.";
-    static final String WARNING_OUTPUT_LIMIT = "Windows Event Log output reached its safety limit.";
-    static final String WARNING_INVALID_OUTPUT = "Some Windows Event Log output could not be parsed.";
-    static final String WARNING_COMMAND_FAILED = "The Windows Event Log command did not complete successfully.";
-    static final String WARNING_SKIPPED_LOGS = "Some Windows Event Logs could not be read.";
 
     private static final long MAX_STDERR_BYTES = 64L * 1024L;
     private static final long STREAM_CAPTURE_TIMEOUT_SECONDS = 5L;
@@ -73,7 +65,7 @@ public class PowerShellWindowsEventLogCommandRunner implements WindowsEventLogCo
 
         Optional<String> executable = executableResolver.get();
         if (executable.isEmpty()) {
-            return WindowsEventLogCommandResult.empty(WARNING_NOT_WINDOWS);
+            return WindowsEventLogCommandResult.empty(WindowsEventLogWarningCode.UNSUPPORTED_PLATFORM);
         }
 
         List<String> command = List.of(
@@ -88,7 +80,7 @@ public class PowerShellWindowsEventLogCommandRunner implements WindowsEventLogCo
         try {
             process = processStarter.start(command);
         } catch (IOException exception) {
-            return WindowsEventLogCommandResult.empty(WARNING_START_FAILED);
+            return WindowsEventLogCommandResult.empty(WindowsEventLogWarningCode.PROCESS_START_FAILED);
         }
 
         ExecutorService streamExecutor = Executors.newFixedThreadPool(2);
@@ -108,20 +100,20 @@ public class PowerShellWindowsEventLogCommandRunner implements WindowsEventLogCo
             StreamCapture stderr = awaitCapture(stderrFuture);
             ParsedOutput parsedOutput = parseOutput(stdout.content());
 
-            Set<String> warnings = new LinkedHashSet<>(parsedOutput.warnings());
+            Set<WindowsEventLogWarningCode> warnings = new LinkedHashSet<>(parsedOutput.warnings());
             if (timedOut) {
-                warnings.add(WARNING_TIMED_OUT);
+                warnings.add(WindowsEventLogWarningCode.TIMEOUT);
             } else if (process.exitValue() != 0) {
-                warnings.add(WARNING_COMMAND_FAILED);
+                warnings.add(WindowsEventLogWarningCode.NON_ZERO_EXIT);
             }
             if (stdout.truncated()) {
-                warnings.add(WARNING_OUTPUT_LIMIT);
+                warnings.add(WindowsEventLogWarningCode.STDOUT_CAP_REACHED);
             }
             if (stderr.truncated() || !stderr.content().isBlank()) {
-                warnings.add(WARNING_COMMAND_FAILED);
+                warnings.add(WindowsEventLogWarningCode.PROCESS_ERROR_OUTPUT);
             }
             if (parsedOutput.logsSkipped() > 0) {
-                warnings.add(WARNING_SKIPPED_LOGS);
+                warnings.add(WindowsEventLogWarningCode.LOG_SKIPPED);
             }
 
             return new WindowsEventLogCommandResult(
@@ -129,13 +121,14 @@ public class PowerShellWindowsEventLogCommandRunner implements WindowsEventLogCo
                     parsedOutput.logsQueried(),
                     parsedOutput.logsWithData(),
                     parsedOutput.logsSkipped(),
+                    parsedOutput.summarySeen(),
                     List.copyOf(warnings),
                     parsedOutput.capReached() || stdout.truncated(),
                     timedOut);
         } catch (InterruptedException exception) {
             process.destroyForcibly();
             Thread.currentThread().interrupt();
-            return WindowsEventLogCommandResult.empty(WARNING_INTERRUPTED);
+            return WindowsEventLogCommandResult.empty(WindowsEventLogWarningCode.INTERRUPTED);
         } finally {
             streamExecutor.shutdownNow();
             if (process.isAlive()) {
@@ -146,7 +139,7 @@ public class PowerShellWindowsEventLogCommandRunner implements WindowsEventLogCo
 
     ParsedOutput parseOutput(String output) {
         List<WindowsEventLogEntry> events = new ArrayList<>();
-        Set<String> warnings = new LinkedHashSet<>();
+        Set<WindowsEventLogWarningCode> warnings = new LinkedHashSet<>();
         int logsQueried = 0;
         int logsWithData = 0;
         int logsSkipped = 0;
@@ -163,7 +156,7 @@ public class PowerShellWindowsEventLogCommandRunner implements WindowsEventLogCo
                 try {
                     JsonElement parsed = JsonParser.parseString(line);
                     if (!parsed.isJsonObject()) {
-                        warnings.add(WARNING_INVALID_OUTPUT);
+                        warnings.add(WindowsEventLogWarningCode.INVALID_NDJSON);
                         continue;
                     }
 
@@ -178,18 +171,18 @@ public class PowerShellWindowsEventLogCommandRunner implements WindowsEventLogCo
                         capReached = booleanValue(object, "capReached");
                         summarySeen = true;
                     } else {
-                        warnings.add(WARNING_INVALID_OUTPUT);
+                        warnings.add(WindowsEventLogWarningCode.INVALID_NDJSON);
                     }
                 } catch (JsonParseException | IllegalStateException | NumberFormatException exception) {
-                    warnings.add(WARNING_INVALID_OUTPUT);
+                    warnings.add(WindowsEventLogWarningCode.INVALID_NDJSON);
                 }
             }
         } catch (IOException exception) {
-            warnings.add(WARNING_INVALID_OUTPUT);
+            warnings.add(WindowsEventLogWarningCode.INVALID_NDJSON);
         }
 
-        if (!output.isBlank() && !summarySeen) {
-            warnings.add(WARNING_INVALID_OUTPUT);
+        if (!summarySeen) {
+            warnings.add(WindowsEventLogWarningCode.SUMMARY_MISSING);
         }
 
         return new ParsedOutput(
@@ -198,7 +191,8 @@ public class PowerShellWindowsEventLogCommandRunner implements WindowsEventLogCo
                 logsWithData,
                 logsSkipped,
                 warnings,
-                capReached);
+                capReached,
+                summarySeen);
     }
 
     private StreamCapture awaitCapture(Future<StreamCapture> future) throws InterruptedException {
@@ -281,12 +275,13 @@ public class PowerShellWindowsEventLogCommandRunner implements WindowsEventLogCo
             int logsQueried,
             int logsWithData,
             int logsSkipped,
-            Set<String> warnings,
-            boolean capReached) {
+            Set<WindowsEventLogWarningCode> warnings,
+            boolean capReached,
+            boolean summarySeen) {
 
         ParsedOutput {
             events = List.copyOf(events);
-            warnings = Set.copyOf(warnings);
+            warnings = Collections.unmodifiableSet(new LinkedHashSet<>(warnings));
         }
     }
 

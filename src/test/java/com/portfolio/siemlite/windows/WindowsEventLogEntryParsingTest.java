@@ -3,6 +3,7 @@ package com.portfolio.siemlite.windows;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,6 +32,7 @@ class WindowsEventLogEntryParsingTest {
         assertEquals("EQUIPO-Á", entry.computer());
         assertEquals("Acceso denegado – José", entry.message());
         assertEquals("<Event>áéíóú</Event>", entry.rawXml());
+        assertTrue(parsed.summarySeen());
         assertTrue(parsed.warnings().isEmpty());
     }
 
@@ -52,5 +54,21 @@ class WindowsEventLogEntryParsingTest {
         assertNull(entry.computer());
         assertNull(entry.message());
         assertNull(entry.rawXml());
+    }
+
+    @Test
+    void preservesValidEventsAndMarksMetadataIncompleteWhenSummaryIsMissing() {
+        String output = """
+                {"type":"event","timestamp":"2026-08-06T12:00:00Z","level":2,"logName":"System","message":"Failed login"}
+                """;
+
+        PowerShellWindowsEventLogCommandRunner.ParsedOutput parsed = runner.parseOutput(output);
+
+        assertEquals(1, parsed.events().size());
+        assertFalse(parsed.summarySeen());
+        assertEquals(0, parsed.logsQueried());
+        assertEquals(0, parsed.logsWithData());
+        assertEquals(0, parsed.logsSkipped());
+        assertTrue(parsed.warnings().contains(WindowsEventLogWarningCode.SUMMARY_MISSING));
     }
 }
