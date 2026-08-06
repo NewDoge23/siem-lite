@@ -118,6 +118,32 @@ class WindowsEventLogMapperTest {
     }
 
     @Test
+    void preservesSuspiciousKeywordsBeyondVisibleMessageLimitForDetection() {
+        String longMessage = "x".repeat(WindowsEventLogMapper.MAX_MESSAGE_LENGTH + 100)
+                + " malware detected";
+        WindowsEventLogEntry entry = new WindowsEventLogEntry(
+                "2026-08-06T12:34:56Z",
+                4,
+                "System",
+                "Provider",
+                10,
+                20L,
+                "HOST",
+                longMessage,
+                "<Event>raw XML remains excluded</Event>");
+        LogEvent event = mapper.map(entry, 1);
+
+        new DetectionService().detectSuspiciousEvents(List.of(event));
+
+        assertEquals(WindowsEventLogMapper.MAX_MESSAGE_LENGTH, event.getMessage().length());
+        assertFalse(event.getMessage().contains("malware"));
+        assertTrue(event.getRawLine().contains("malware detected"));
+        assertFalse(event.getRawLine().contains("raw XML remains excluded"));
+        assertTrue(event.isSuspicious());
+        assertEquals("malware", event.getMatchedKeyword());
+    }
+
+    @Test
     void mappedRawLineRemainsCompatibleWithSuspiciousDetection() {
         WindowsEventLogEntry entry = new WindowsEventLogEntry(
                 "2026-08-06T12:34:56Z",

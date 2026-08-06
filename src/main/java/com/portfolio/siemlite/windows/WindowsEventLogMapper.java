@@ -28,8 +28,9 @@ public class WindowsEventLogMapper {
         String timestamp = normalizeTimestamp(entry.timestamp());
         Severity severity = mapSeverity(entry.level());
         String source = selectSource(entry.providerName(), entry.logName());
-        String message = selectMessage(entry.message());
-        String rawLine = buildRawLine(entry, timestamp, message);
+        String detectionMessage = selectDetectionMessage(entry.message());
+        String message = limitVisibleMessage(detectionMessage);
+        String rawLine = buildRawLine(entry, timestamp, detectionMessage);
 
         return new LogEvent(lineNumber, timestamp, severity, source, message, rawLine);
     }
@@ -74,16 +75,19 @@ public class WindowsEventLogMapper {
         return DEFAULT_SOURCE;
     }
 
-    private String selectMessage(String message) {
+    private String selectDetectionMessage(String message) {
         if (message == null || message.isBlank()) {
             return DEFAULT_MESSAGE;
         }
 
-        String compactMessage = compact(message);
-        if (compactMessage.length() <= MAX_MESSAGE_LENGTH) {
-            return compactMessage;
+        return compact(message);
+    }
+
+    private String limitVisibleMessage(String message) {
+        if (message.length() <= MAX_MESSAGE_LENGTH) {
+            return message;
         }
-        return compactMessage.substring(0, MAX_MESSAGE_LENGTH - 1) + "…";
+        return message.substring(0, MAX_MESSAGE_LENGTH - 1) + "…";
     }
 
     private String buildRawLine(WindowsEventLogEntry entry, String timestamp, String message) {
