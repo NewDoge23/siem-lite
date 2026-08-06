@@ -181,7 +181,7 @@ class MainControllerStatusTest {
 
         assertTrue(status.startsWith(
                 "Loaded 0 Windows events | Suspicious: 0 | Partial result"));
-        assertTrue(status.contains("Warnings: 1"));
+        assertTrue(status.contains("Load warnings: 1"));
         assertFalse(status.contains("No Windows events were found"));
         assertFalse(status.contains("SUMMARY_MISSING"));
     }
@@ -210,7 +210,7 @@ class MainControllerStatusTest {
                         + " | Last updated: 14:06:00"
                         + " | Timed out while reading Windows Event Logs. Partial results may be shown."
                         + " | Safety limit reached. Some events may not be shown."
-                        + " | Warnings: 3",
+                        + " | Load warnings: 3",
                 status);
         assertFalse(status.contains("from 0 logs"));
         assertFalse(status.contains("SUMMARY_MISSING"));
@@ -260,7 +260,7 @@ class MainControllerStatusTest {
                 "Partial refresh received. Keeping 25 previously loaded Windows events."
                         + " | Last updated: 13:59:00"
                         + " | Timed out while reading Windows Event Logs. Partial results may be shown."
-                        + " | Warnings: 2",
+                        + " | Load warnings: 2",
                 status);
         assertFalse(status.contains("SUMMARY_MISSING"));
         assertFalse(status.contains("TIMEOUT"));
@@ -292,7 +292,7 @@ class MainControllerStatusTest {
                 0,
                 1,
                 true,
-                List.of(),
+                List.of(WindowsEventLogWarningCode.LOG_SKIPPED),
                 false,
                 false);
 
@@ -300,6 +300,8 @@ class MainControllerStatusTest {
 
         assertTrue(status.startsWith("Se cargaron 1 eventos de Windows desde 1 logs"));
         assertTrue(status.contains("Última actualización: 14:08:00"));
+        assertTrue(status.contains("Advertencias de carga: 1"));
+        assertFalse(status.contains("LOG_SKIPPED"));
     }
 
     private WindowsEventLogImportResult windowsResult(

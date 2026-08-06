@@ -372,8 +372,12 @@ public class MainController {
             });
             WindowsEventLogQuery query = WindowsEventLogQuery.last24Hours(windowsRefreshClock);
             WindowsEventLogImportResult result = windowsEventLogImportService.importEvents(query);
+            List<LogEvent> refreshedEvents = result.events().stream()
+                    .map(importedEvent -> importedEvent.logEvent())
+                    .toList();
             Instant completedAt = windowsRefreshClock.instant();
-            runOnFxThreadIfActive(() -> applyWindowsRefreshResult(result, completedAt));
+            runOnFxThreadIfActive(() ->
+                    applyWindowsRefreshResult(result, refreshedEvents, completedAt));
         } catch (RuntimeException exception) {
             runOnFxThreadIfActive(() -> {
                 windowsPlaceholderLabel.setText(
@@ -385,11 +389,11 @@ public class MainController {
         }
     }
 
-    private void applyWindowsRefreshResult(WindowsEventLogImportResult result, Instant completedAt) {
+    private void applyWindowsRefreshResult(
+            WindowsEventLogImportResult result,
+            List<LogEvent> refreshedEvents,
+            Instant completedAt) {
         windowsPlaceholderLabel.setText(localizationService.get(windowsPlaceholderKey(result)));
-        List<LogEvent> refreshedEvents = result.events().stream()
-                .map(importedEvent -> importedEvent.logEvent())
-                .toList();
 
         if (result.metadataComplete()) {
             windowsEvents.setAll(refreshedEvents);
