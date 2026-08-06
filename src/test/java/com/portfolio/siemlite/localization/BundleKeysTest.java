@@ -50,6 +50,8 @@ class BundleKeysTest {
             "status.windows.lastUpdated",
             "status.windows.partialRetained",
             "status.windows.loadFailed",
+            "placeholder.windows.loading",
+            "placeholder.windows.noEvents",
             "warning.saveSuspiciousEvents",
             "warning.loadSavedEvents",
             "value.yes",

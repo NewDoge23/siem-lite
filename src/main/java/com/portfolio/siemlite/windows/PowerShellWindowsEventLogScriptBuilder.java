@@ -2,17 +2,20 @@ package com.portfolio.siemlite.windows;
 
 final class PowerShellWindowsEventLogScriptBuilder {
 
+    static final String INTERNAL_RUNNER_MARKER = "SIEM_LITE_WINDOWS_EVENT_IMPORT_V040";
+
     private static final String START_TIME_TOKEN = "__SIEM_START_TIME__";
     private static final String MAX_PER_LOG_TOKEN = "__SIEM_MAX_PER_LOG__";
     private static final String MAX_TOTAL_TOKEN = "__SIEM_MAX_TOTAL__";
+    private static final String RUNNER_MARKER_TOKEN = "__SIEM_RUNNER_MARKER__";
 
     private static final String SCRIPT_TEMPLATE = """
-            $ErrorActionPreference = 'Continue'
             $ProgressPreference = 'SilentlyContinue'
             $utf8 = New-Object System.Text.UTF8Encoding($false)
             [Console]::OutputEncoding = $utf8
             $OutputEncoding = $utf8
 
+            $siemLiteRunnerMarker = '__SIEM_RUNNER_MARKER__'
             $startTime = [DateTimeOffset]::Parse('__SIEM_START_TIME__', [Globalization.CultureInfo]::InvariantCulture).UtcDateTime
             $maxEventsPerLog = __SIEM_MAX_PER_LOG__
             $maxTotalEvents = __SIEM_MAX_TOTAL__
@@ -49,10 +52,8 @@ final class PowerShellWindowsEventLogScriptBuilder {
                 try {
                     $events = @(Get-WinEvent -FilterHashtable @{ LogName = $log.LogName; StartTime = $startTime } -MaxEvents $maxForLog -ErrorAction Stop)
                     $logsQueried += 1
+                    $eventsEmittedForLog = 0
 
-                    if ($events.Count -gt 0) {
-                        $logsWithData += 1
-                    }
                     if ($events.Count -ge $maxForLog) {
                         $capReached = $true
                     }
@@ -73,6 +74,14 @@ final class PowerShellWindowsEventLogScriptBuilder {
                             $message = $event.FormatDescription()
                         } catch {
                             $message = $null
+                        }
+
+                        $isPowerShellScriptBlock = $event.ProviderName -eq 'Microsoft-Windows-PowerShell' -and $event.Id -eq 4104
+                        $hasCurrentRunnerMarker = $null -ne $message -and $message.Contains($siemLiteRunnerMarker)
+                        $hasLegacyRunnerSignature = $null -ne $message -and $message.Contains("Get-WinEvent -ListLog '*'") -and $message.Contains('$maxTotalEvents') -and $message.Contains("type = 'summary'")
+                        $isSiemLiteRunnerAuditEvent = $isPowerShellScriptBlock -and ($hasCurrentRunnerMarker -or $hasLegacyRunnerSignature)
+                        if ($isSiemLiteRunnerAuditEvent) {
+                            continue
                         }
 
                         $rawXml = $null
@@ -96,6 +105,11 @@ final class PowerShellWindowsEventLogScriptBuilder {
                         } | ConvertTo-Json -Depth 3 -Compress
 
                         $eventsWritten += 1
+                        $eventsEmittedForLog += 1
+                    }
+
+                    if ($eventsEmittedForLog -gt 0) {
+                        $logsWithData += 1
                     }
                 } catch {
                     $logsSkipped += 1
@@ -115,6 +129,7 @@ final class PowerShellWindowsEventLogScriptBuilder {
         return SCRIPT_TEMPLATE
                 .replace(START_TIME_TOKEN, query.startTime().toString())
                 .replace(MAX_PER_LOG_TOKEN, Integer.toString(query.maxEventsPerLog()))
-                .replace(MAX_TOTAL_TOKEN, Integer.toString(query.maxTotalEvents()));
+                .replace(MAX_TOTAL_TOKEN, Integer.toString(query.maxTotalEvents()))
+                .replace(RUNNER_MARKER_TOKEN, INTERNAL_RUNNER_MARKER);
     }
 }

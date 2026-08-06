@@ -31,9 +31,11 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.FileChooser;
 
@@ -53,6 +55,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class MainController {
 
     static final long WINDOWS_REFRESH_INTERVAL_SECONDS = 120L;
+    static final int WINDOWS_TOOLTIP_MAX_LENGTH = 2_000;
 
     private static final DateTimeFormatter WINDOWS_STATUS_TIME_FORMAT =
             DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
@@ -129,6 +132,9 @@ public class MainController {
 
     @FXML
     private TableView<LogEvent> windowsEventsTable;
+
+    @FXML
+    private Label windowsPlaceholderLabel;
 
     @FXML
     private TableColumn<LogEvent, Integer> windowsLineNumberColumn;
@@ -251,6 +257,7 @@ public class MainController {
                 windowsSuspiciousColumn,
                 windowsKeywordColumn,
                 windowsMessageColumn);
+        configureWindowsMessageTooltip();
     }
 
     private void configureLogEventTable(
@@ -269,6 +276,33 @@ public class MainController {
                 localizationService.get(cellData.getValue().isSuspicious() ? "value.yes" : "value.no")));
         keyword.setCellValueFactory(new PropertyValueFactory<>("matchedKeyword"));
         message.setCellValueFactory(new PropertyValueFactory<>("message"));
+    }
+
+    private void configureWindowsMessageTooltip() {
+        windowsMessageColumn.setCellFactory(column -> new TableCell<>() {
+            private final Tooltip messageTooltip = createMessageTooltip();
+
+            @Override
+            protected void updateItem(String message, boolean empty) {
+                super.updateItem(message, empty);
+                if (empty || message == null || message.isBlank()) {
+                    setText(null);
+                    setTooltip(null);
+                    return;
+                }
+
+                setText(message);
+                messageTooltip.setText(limitWindowsTooltip(message));
+                setTooltip(messageTooltip);
+            }
+
+            private Tooltip createMessageTooltip() {
+                Tooltip tooltip = new Tooltip();
+                tooltip.setWrapText(true);
+                tooltip.setMaxWidth(700);
+                return tooltip;
+            }
+        });
     }
 
     private void configureSavedEventsTable() {
@@ -315,6 +349,7 @@ public class MainController {
     }
 
     private void startWindowsEventAutoRefresh() {
+        windowsPlaceholderLabel.setText(localizationService.get("placeholder.windows.loading"));
         setWindowsStatus(localizationService.get("status.windows.loading"));
         windowsRefreshExecutor.scheduleWithFixedDelay(
                 this::refreshWindowsEvents,
@@ -329,19 +364,29 @@ public class MainController {
         }
 
         try {
+            runOnFxThreadIfActive(() -> {
+                if (windowsEvents.isEmpty()) {
+                    windowsPlaceholderLabel.setText(
+                            localizationService.get("placeholder.windows.loading"));
+                }
+            });
             WindowsEventLogQuery query = WindowsEventLogQuery.last24Hours(windowsRefreshClock);
             WindowsEventLogImportResult result = windowsEventLogImportService.importEvents(query);
             Instant completedAt = windowsRefreshClock.instant();
             runOnFxThreadIfActive(() -> applyWindowsRefreshResult(result, completedAt));
         } catch (RuntimeException exception) {
-            runOnFxThreadIfActive(() ->
-                    setWindowsStatus(localizationService.get("status.windows.loadFailed")));
+            runOnFxThreadIfActive(() -> {
+                windowsPlaceholderLabel.setText(
+                        localizationService.get("placeholder.windows.noEvents"));
+                setWindowsStatus(localizationService.get("status.windows.loadFailed"));
+            });
         } finally {
             windowsRefreshInProgress.set(false);
         }
     }
 
     private void applyWindowsRefreshResult(WindowsEventLogImportResult result, Instant completedAt) {
+        windowsPlaceholderLabel.setText(localizationService.get("placeholder.windows.noEvents"));
         List<LogEvent> refreshedEvents = result.events().stream()
                 .map(importedEvent -> importedEvent.logEvent())
                 .toList();
@@ -526,6 +571,16 @@ public class MainController {
         }
 
         return appendWindowsStatusDetails(status, result, lastUpdated, localizationService);
+    }
+
+    static String limitWindowsTooltip(String message) {
+        if (message == null || message.isBlank()) {
+            return "";
+        }
+        if (message.length() <= WINDOWS_TOOLTIP_MAX_LENGTH) {
+            return message;
+        }
+        return message.substring(0, WINDOWS_TOOLTIP_MAX_LENGTH - 1) + "…";
     }
 
     static String buildWindowsRetainedStatus(

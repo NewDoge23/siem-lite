@@ -219,6 +219,19 @@ class MainControllerStatusTest {
     }
 
     @Test
+    void boundsWindowsMessageTooltipWithoutChangingShortMessages() {
+        String shortMessage = "PowerShell event details";
+        String longMessage = "x".repeat(MainController.WINDOWS_TOOLTIP_MAX_LENGTH + 100);
+
+        assertEquals(shortMessage, MainController.limitWindowsTooltip(shortMessage));
+        assertEquals("", MainController.limitWindowsTooltip(null));
+
+        String limited = MainController.limitWindowsTooltip(longMessage);
+        assertEquals(MainController.WINDOWS_TOOLTIP_MAX_LENGTH, limited.length());
+        assertTrue(limited.endsWith("…"));
+    }
+
+    @Test
     void buildsSpanishWindowsStatusFromTheSameStructuredResult() {
         LocalizationService spanish = new LocalizationService(LanguageOption.SPANISH);
         WindowsEventLogImportResult result = windowsResult(

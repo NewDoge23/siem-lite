@@ -37,14 +37,24 @@
             <tabs>
                 <Tab fx:id="windowsEventsTab" text="%tab.windowsEvents">
                     <TableView fx:id="windowsEventsTable">
+                        <placeholder>
+                            <Label fx:id="windowsPlaceholderLabel" text="%placeholder.windows.loading"/>
+                        </placeholder>
                         <columns>
-                            <TableColumn fx:id="windowsLineNumberColumn" text="%table.lineNumber" prefWidth="70"/>
-                            <TableColumn fx:id="windowsTimestampColumn" text="%table.timestamp" prefWidth="165"/>
-                            <TableColumn fx:id="windowsSeverityColumn" text="%table.severity" prefWidth="105"/>
-                            <TableColumn fx:id="windowsSourceColumn" text="%table.source" prefWidth="140"/>
-                            <TableColumn fx:id="windowsSuspiciousColumn" text="%table.suspicious" prefWidth="110"/>
-                            <TableColumn fx:id="windowsKeywordColumn" text="%table.keyword" prefWidth="120"/>
-                            <TableColumn fx:id="windowsMessageColumn" text="%table.message" prefWidth="470"/>
+                            <TableColumn fx:id="windowsLineNumberColumn" text="%table.lineNumber"
+                                         minWidth="50" prefWidth="70"/>
+                            <TableColumn fx:id="windowsTimestampColumn" text="%table.timestamp"
+                                         minWidth="160" prefWidth="165"/>
+                            <TableColumn fx:id="windowsSeverityColumn" text="%table.severity"
+                                         minWidth="90" prefWidth="105"/>
+                            <TableColumn fx:id="windowsSourceColumn" text="%table.source"
+                                         minWidth="180" prefWidth="180"/>
+                            <TableColumn fx:id="windowsSuspiciousColumn" text="%table.suspicious"
+                                         minWidth="100" prefWidth="110"/>
+                            <TableColumn fx:id="windowsKeywordColumn" text="%table.keyword"
+                                         minWidth="120" prefWidth="120"/>
+                            <TableColumn fx:id="windowsMessageColumn" text="%table.message"
+                                         minWidth="350" prefWidth="470"/>
                         </columns>
                         <columnResizePolicy>
                             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>

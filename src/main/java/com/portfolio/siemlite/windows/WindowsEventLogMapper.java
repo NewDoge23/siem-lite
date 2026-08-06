@@ -5,7 +5,7 @@ import com.portfolio.siemlite.model.Severity;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Objects;
@@ -16,8 +16,17 @@ public class WindowsEventLogMapper {
     static final String DEFAULT_MESSAGE = "No formatted message available.";
     static final int MAX_MESSAGE_LENGTH = 4_096;
 
-    private static final DateTimeFormatter LOG_EVENT_TIMESTAMP_FORMAT =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneOffset.UTC);
+    private final DateTimeFormatter displayTimestampFormat;
+
+    public WindowsEventLogMapper() {
+        this(ZoneId.systemDefault());
+    }
+
+    public WindowsEventLogMapper(ZoneId displayZone) {
+        this.displayTimestampFormat = DateTimeFormatter
+                .ofPattern("yyyy-MM-dd HH:mm:ss")
+                .withZone(Objects.requireNonNull(displayZone, "displayZone"));
+    }
 
     public LogEvent map(WindowsEventLogEntry entry, int lineNumber) {
         Objects.requireNonNull(entry, "entry");
@@ -55,10 +64,10 @@ public class WindowsEventLogMapper {
 
         String candidate = timestamp.trim();
         try {
-            return LOG_EVENT_TIMESTAMP_FORMAT.format(Instant.parse(candidate));
+            return displayTimestampFormat.format(Instant.parse(candidate));
         } catch (DateTimeParseException exception) {
             try {
-                return LOG_EVENT_TIMESTAMP_FORMAT.format(OffsetDateTime.parse(candidate).toInstant());
+                return displayTimestampFormat.format(OffsetDateTime.parse(candidate).toInstant());
             } catch (DateTimeParseException ignored) {
                 return "";
             }

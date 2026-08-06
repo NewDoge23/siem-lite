@@ -5,6 +5,8 @@ import com.portfolio.siemlite.model.Severity;
 import com.portfolio.siemlite.service.DetectionService;
 import org.junit.jupiter.api.Test;
 
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WindowsEventLogMapperTest {
 
-    private final WindowsEventLogMapper mapper = new WindowsEventLogMapper();
+    private final WindowsEventLogMapper mapper = new WindowsEventLogMapper(ZoneOffset.UTC);
 
     @Test
     void mapsCompleteWindowsEntryToLogEvent() {
@@ -44,6 +46,28 @@ class WindowsEventLogMapperTest {
         assertTrue(event.getRawLine().contains("computer=EQUIPO-Á"));
         assertFalse(event.getRawLine().contains("<Secret>"));
         assertFalse(event.isSuspicious());
+    }
+
+    @Test
+    void rendersUtcWindowsTimestampInConfiguredLocalZoneWithoutChangingIdentity() {
+        WindowsEventLogEntry entry = new WindowsEventLogEntry(
+                "2026-08-06T08:05:15Z",
+                4,
+                "System",
+                "Provider",
+                42,
+                9_001L,
+                "HOST",
+                "Message",
+                null);
+        WindowsEventLogMapper localMapper =
+                new WindowsEventLogMapper(ZoneId.of("America/Argentina/Buenos_Aires"));
+
+        LogEvent event = localMapper.map(entry, 1);
+        WindowsEventLogIdentity identity = WindowsEventLogIdentity.from(entry);
+
+        assertEquals("2026-08-06 05:05:15", event.getTimestamp());
+        assertEquals("2026-08-06T08:05:15Z", identity.timestamp());
     }
 
     @Test

@@ -34,6 +34,12 @@ class LocalizationServiceTest {
         assertEquals(
                 "Idioma actualizado. Reiniciá la aplicación para aplicar todos los cambios de la interfaz.",
                 service.get("language.restartRequired"));
+        assertEquals(
+                "Cargando eventos de Windows de las últimas 24 horas...",
+                service.get("placeholder.windows.loading"));
+        assertEquals(
+                "No se encontraron eventos de Windows en las últimas 24 horas.",
+                service.get("placeholder.windows.noEvents"));
     }
 
     @Test
