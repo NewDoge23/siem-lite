@@ -199,30 +199,16 @@ All new UI added in this milestone should use localization keys from the start.
 
 ### v0.4.x - Windows Event Log Support
 
-- `v0.4.0`: Manual local Windows Event Log import.
-- `v0.4.1`: Permission handling.
-- `v0.4.2`: Collection limits and progress UI.
-- `v0.4.3`: Cancellation support.
-- `v0.4.4`: Windows sample datasets.
-- `v0.4.5`: Collector reliability pass.
-- `v0.4.6`: Localized Windows collector messages.
-
-Initial sources:
-
-- Security Event Log
-- System Event Log
-- Application Event Log
-
-Initial Event IDs:
-
-- `4625` - Failed logon
-- `4624` - Successful logon
-- `4672` - Special privileges assigned
-- `4688` - Process creation
-- `4720` - User account created
-- `4726` - User account deleted
-- `1102` - Audit log cleared
-- `7045` - Service installed
+- `v0.4.0`: Windows Event Logs Import Foundation.
+- `v0.4.1`: Network Event Classification & Filter.
+- `v0.4.2`: Grouped Windows Events View.
+- `v0.4.3`: Grouped / Unified View Selector.
+- `v0.4.4`: Network Event Highlighting.
+- `v0.4.5`: Severity Color Indicators.
+- `v0.4.6`: Time Range Filters.
+- `v0.4.7`: Windows Import Progress & Cancel.
+- `v0.4.8`: Windows Event Details Panel.
+- `v0.4.9`: Network Detection Rules Refinement.
 
 ### v0.5.x - Windows-Focused Detection Rules and Theme Foundation
 
