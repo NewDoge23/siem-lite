@@ -3,6 +3,7 @@ package com.portfolio.siemlite;
 import com.portfolio.siemlite.config.AppDataPathService;
 import com.portfolio.siemlite.config.SettingsService;
 import com.portfolio.siemlite.config.UserSettings;
+import com.portfolio.siemlite.controller.MainController;
 import com.portfolio.siemlite.localization.LocalizationService;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -13,6 +14,8 @@ import java.io.IOException;
 import java.util.Objects;
 
 public class MainApp extends Application {
+
+    private MainController mainController;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -25,6 +28,7 @@ public class MainApp extends Application {
                 MainApp.class.getResource("/fxml/main-view.fxml"),
                 localizationService.getBundle());
         Scene scene = new Scene(loader.load(), 1100, 700);
+        mainController = loader.getController();
         scene.getStylesheets().add(Objects.requireNonNull(
                 MainApp.class.getResource("/css/styles.css")).toExternalForm());
 
@@ -33,6 +37,13 @@ public class MainApp extends Application {
         stage.setMinHeight(600);
         stage.setScene(scene);
         stage.show();
+    }
+
+    @Override
+    public void stop() {
+        if (mainController != null) {
+            mainController.shutdown();
+        }
     }
 
     public static void main(String[] args) {

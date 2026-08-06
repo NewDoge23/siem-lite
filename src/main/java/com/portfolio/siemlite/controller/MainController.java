@@ -17,12 +17,20 @@ import com.portfolio.siemlite.service.DetectionService;
 import com.portfolio.siemlite.service.EventFilterService;
 import com.portfolio.siemlite.service.SavedEventSaveResult;
 import com.portfolio.siemlite.service.SavedEventService;
+import com.portfolio.siemlite.windows.PowerShellWindowsEventLogCommandRunner;
+import com.portfolio.siemlite.windows.WindowsEventLogImportResult;
+import com.portfolio.siemlite.windows.WindowsEventLogImportService;
+import com.portfolio.siemlite.windows.WindowsEventLogQuery;
+import com.portfolio.siemlite.windows.WindowsEventLogWarningCode;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -32,9 +40,22 @@ import javafx.stage.FileChooser;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainController {
+
+    static final long WINDOWS_REFRESH_INTERVAL_SECONDS = 120L;
+
+    private static final DateTimeFormatter WINDOWS_STATUS_TIME_FORMAT =
+            DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
 
     private final AppDataPathService appDataPathService = new AppDataPathService();
     private final SettingsService settingsService = new SettingsService(appDataPathService);
@@ -43,11 +64,35 @@ public class MainController {
     private final DetectionService detectionService = new DetectionService();
     private final EventFilterService eventFilterService = new EventFilterService();
     private final ObservableList<LogEvent> allEvents = FXCollections.observableArrayList();
+    private final ObservableList<LogEvent> windowsEvents = FXCollections.observableArrayList();
     private final ObservableList<SavedLogEvent> savedEvents = FXCollections.observableArrayList();
+    private final WindowsEventLogImportService windowsEventLogImportService =
+            new WindowsEventLogImportService(new PowerShellWindowsEventLogCommandRunner());
+    private final Clock windowsRefreshClock = Clock.systemUTC();
+    private final ScheduledExecutorService windowsRefreshExecutor =
+            Executors.newSingleThreadScheduledExecutor(runnable -> {
+                Thread thread = new Thread(runnable, "siem-lite-windows-event-refresh");
+                thread.setDaemon(true);
+                return thread;
+            });
+    private final AtomicBoolean windowsRefreshInProgress = new AtomicBoolean();
+    private final AtomicBoolean windowsRefreshStopped = new AtomicBoolean();
     private SavedEventService savedEventService;
     private LocalizationService localizationService;
     private String saveWarning = "";
     private String loadWarning = "";
+    private String windowsStatus = "";
+    private boolean hasCompleteWindowsResult;
+    private Instant lastCompleteWindowsUpdate;
+
+    @FXML
+    private TabPane mainTabPane;
+
+    @FXML
+    private Tab windowsEventsTab;
+
+    @FXML
+    private Tab importedEventsTab;
 
     @FXML
     private TextField searchField;
@@ -81,6 +126,30 @@ public class MainController {
 
     @FXML
     private TableColumn<LogEvent, String> messageColumn;
+
+    @FXML
+    private TableView<LogEvent> windowsEventsTable;
+
+    @FXML
+    private TableColumn<LogEvent, Integer> windowsLineNumberColumn;
+
+    @FXML
+    private TableColumn<LogEvent, String> windowsTimestampColumn;
+
+    @FXML
+    private TableColumn<LogEvent, Severity> windowsSeverityColumn;
+
+    @FXML
+    private TableColumn<LogEvent, String> windowsSourceColumn;
+
+    @FXML
+    private TableColumn<LogEvent, String> windowsSuspiciousColumn;
+
+    @FXML
+    private TableColumn<LogEvent, String> windowsKeywordColumn;
+
+    @FXML
+    private TableColumn<LogEvent, String> windowsMessageColumn;
 
     @FXML
     private TableView<SavedLogEvent> savedEventsTable;
@@ -121,8 +190,17 @@ public class MainController {
         configureLanguageSelector(userSettings.language());
         configureFilters();
         eventsTable.setItems(allEvents);
+        windowsEventsTable.setItems(windowsEvents);
         savedEventsTable.setItems(savedEvents);
+        mainTabPane.getSelectionModel().select(windowsEventsTab);
+        mainTabPane.getSelectionModel().selectedItemProperty().addListener(
+                (observable, oldTab, newTab) -> {
+                    if (newTab == windowsEventsTab && !windowsStatus.isBlank()) {
+                        statusLabel.setText(windowsStatus);
+                    }
+                });
         initializePersistence();
+        startWindowsEventAutoRefresh();
     }
 
     @FXML
@@ -136,6 +214,8 @@ public class MainController {
         if (selectedFile == null) {
             return;
         }
+
+        mainTabPane.getSelectionModel().select(importedEventsTab);
 
         try {
             saveWarning = "";
@@ -155,14 +235,40 @@ public class MainController {
     }
 
     private void configureTable() {
-        lineNumberColumn.setCellValueFactory(new PropertyValueFactory<>("lineNumber"));
-        timestampColumn.setCellValueFactory(new PropertyValueFactory<>("timestamp"));
-        severityColumn.setCellValueFactory(new PropertyValueFactory<>("severity"));
-        sourceColumn.setCellValueFactory(new PropertyValueFactory<>("source"));
-        suspiciousColumn.setCellValueFactory(cellData -> new SimpleStringProperty(
+        configureLogEventTable(
+                lineNumberColumn,
+                timestampColumn,
+                severityColumn,
+                sourceColumn,
+                suspiciousColumn,
+                keywordColumn,
+                messageColumn);
+        configureLogEventTable(
+                windowsLineNumberColumn,
+                windowsTimestampColumn,
+                windowsSeverityColumn,
+                windowsSourceColumn,
+                windowsSuspiciousColumn,
+                windowsKeywordColumn,
+                windowsMessageColumn);
+    }
+
+    private void configureLogEventTable(
+            TableColumn<LogEvent, Integer> lineNumber,
+            TableColumn<LogEvent, String> timestamp,
+            TableColumn<LogEvent, Severity> severity,
+            TableColumn<LogEvent, String> source,
+            TableColumn<LogEvent, String> suspicious,
+            TableColumn<LogEvent, String> keyword,
+            TableColumn<LogEvent, String> message) {
+        lineNumber.setCellValueFactory(new PropertyValueFactory<>("lineNumber"));
+        timestamp.setCellValueFactory(new PropertyValueFactory<>("timestamp"));
+        severity.setCellValueFactory(new PropertyValueFactory<>("severity"));
+        source.setCellValueFactory(new PropertyValueFactory<>("source"));
+        suspicious.setCellValueFactory(cellData -> new SimpleStringProperty(
                 localizationService.get(cellData.getValue().isSuspicious() ? "value.yes" : "value.no")));
-        keywordColumn.setCellValueFactory(new PropertyValueFactory<>("matchedKeyword"));
-        messageColumn.setCellValueFactory(new PropertyValueFactory<>("message"));
+        keyword.setCellValueFactory(new PropertyValueFactory<>("matchedKeyword"));
+        message.setCellValueFactory(new PropertyValueFactory<>("message"));
     }
 
     private void configureSavedEventsTable() {
@@ -206,6 +312,92 @@ public class MainController {
                 statusLabel.setText(localizationService.get("language.saveError"));
             }
         });
+    }
+
+    private void startWindowsEventAutoRefresh() {
+        setWindowsStatus(localizationService.get("status.windows.loading"));
+        windowsRefreshExecutor.scheduleWithFixedDelay(
+                this::refreshWindowsEvents,
+                0,
+                WINDOWS_REFRESH_INTERVAL_SECONDS,
+                TimeUnit.SECONDS);
+    }
+
+    private void refreshWindowsEvents() {
+        if (windowsRefreshStopped.get() || !windowsRefreshInProgress.compareAndSet(false, true)) {
+            return;
+        }
+
+        try {
+            WindowsEventLogQuery query = WindowsEventLogQuery.last24Hours(windowsRefreshClock);
+            WindowsEventLogImportResult result = windowsEventLogImportService.importEvents(query);
+            Instant completedAt = windowsRefreshClock.instant();
+            runOnFxThreadIfActive(() -> applyWindowsRefreshResult(result, completedAt));
+        } catch (RuntimeException exception) {
+            runOnFxThreadIfActive(() ->
+                    setWindowsStatus(localizationService.get("status.windows.loadFailed")));
+        } finally {
+            windowsRefreshInProgress.set(false);
+        }
+    }
+
+    private void applyWindowsRefreshResult(WindowsEventLogImportResult result, Instant completedAt) {
+        List<LogEvent> refreshedEvents = result.events().stream()
+                .map(importedEvent -> importedEvent.logEvent())
+                .toList();
+
+        if (result.metadataComplete()) {
+            windowsEvents.setAll(refreshedEvents);
+            hasCompleteWindowsResult = true;
+            lastCompleteWindowsUpdate = completedAt;
+            setWindowsStatus(buildWindowsStatus(
+                    result,
+                    formatWindowsUpdateTime(completedAt),
+                    localizationService));
+            return;
+        }
+
+        if (!hasCompleteWindowsResult) {
+            windowsEvents.setAll(refreshedEvents);
+            setWindowsStatus(buildWindowsStatus(
+                    result,
+                    formatWindowsUpdateTime(completedAt),
+                    localizationService));
+            return;
+        }
+
+        setWindowsStatus(buildWindowsRetainedStatus(
+                windowsEvents.size(),
+                result,
+                formatWindowsUpdateTime(lastCompleteWindowsUpdate),
+                localizationService));
+    }
+
+    private void setWindowsStatus(String status) {
+        windowsStatus = status == null ? "" : status;
+        if (mainTabPane.getSelectionModel().getSelectedItem() == windowsEventsTab) {
+            statusLabel.setText(windowsStatus);
+        }
+    }
+
+    private void runOnFxThreadIfActive(Runnable action) {
+        if (windowsRefreshStopped.get()) {
+            return;
+        }
+
+        try {
+            Platform.runLater(() -> {
+                if (!windowsRefreshStopped.get()) {
+                    action.run();
+                }
+            });
+        } catch (IllegalStateException ignored) {
+            // The JavaFX runtime is already stopping.
+        }
+    }
+
+    private String formatWindowsUpdateTime(Instant updatedAt) {
+        return updatedAt == null ? "" : WINDOWS_STATUS_TIME_FORMAT.format(updatedAt);
     }
 
     private void applyFilters() {
@@ -307,6 +499,78 @@ public class MainController {
         }
 
         return status;
+    }
+
+    static String buildWindowsStatus(
+            WindowsEventLogImportResult result,
+            String lastUpdated,
+            LocalizationService localizationService) {
+        if (result.warnings().contains(WindowsEventLogWarningCode.UNSUPPORTED_PLATFORM)) {
+            return localizationService.get("status.windows.unsupportedPlatform");
+        }
+
+        String status;
+        if (result.metadataComplete() && result.totalEvents() == 0) {
+            status = localizationService.get("status.windows.noEvents");
+        } else if (result.metadataComplete()) {
+            status = localizationService.format(
+                    "status.windows.loadedComplete",
+                    result.totalEvents(),
+                    result.logsWithEvents(),
+                    result.suspiciousEvents());
+        } else {
+            status = localizationService.format(
+                    "status.windows.loadedPartial",
+                    result.totalEvents(),
+                    result.suspiciousEvents());
+        }
+
+        return appendWindowsStatusDetails(status, result, lastUpdated, localizationService);
+    }
+
+    static String buildWindowsRetainedStatus(
+            int retainedEventCount,
+            WindowsEventLogImportResult refreshResult,
+            String lastUpdated,
+            LocalizationService localizationService) {
+        String status = localizationService.format(
+                "status.windows.partialRetained",
+                retainedEventCount);
+        return appendWindowsStatusDetails(
+                status,
+                refreshResult,
+                lastUpdated,
+                localizationService);
+    }
+
+    private static String appendWindowsStatusDetails(
+            String status,
+            WindowsEventLogImportResult result,
+            String lastUpdated,
+            LocalizationService localizationService) {
+        if (lastUpdated != null && !lastUpdated.isBlank()) {
+            status += " | " + localizationService.format(
+                    "status.windows.lastUpdated",
+                    lastUpdated);
+        }
+        if (result.timedOut()) {
+            status += " | " + localizationService.get("status.windows.timeout");
+        }
+        if (result.reachedCap()) {
+            status += " | " + localizationService.get("status.windows.capReached");
+        }
+        if (!result.warnings().isEmpty()) {
+            status += " | " + localizationService.format(
+                    "status.windows.warningCount",
+                    result.warnings().size());
+        }
+        return status;
+    }
+
+    public void shutdown() {
+        if (windowsRefreshStopped.compareAndSet(false, true)) {
+            windowsRefreshExecutor.shutdownNow();
+        }
     }
 
     private record SeverityFilterOption(String label, Severity severity) {

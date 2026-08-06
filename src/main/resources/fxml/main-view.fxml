@@ -33,9 +33,25 @@
         </VBox>
     </top>
     <center>
-        <TabPane BorderPane.alignment="CENTER" tabClosingPolicy="UNAVAILABLE">
+        <TabPane fx:id="mainTabPane" BorderPane.alignment="CENTER" tabClosingPolicy="UNAVAILABLE">
             <tabs>
-                <Tab text="%tab.importedEvents">
+                <Tab fx:id="windowsEventsTab" text="%tab.windowsEvents">
+                    <TableView fx:id="windowsEventsTable">
+                        <columns>
+                            <TableColumn fx:id="windowsLineNumberColumn" text="%table.lineNumber" prefWidth="70"/>
+                            <TableColumn fx:id="windowsTimestampColumn" text="%table.timestamp" prefWidth="165"/>
+                            <TableColumn fx:id="windowsSeverityColumn" text="%table.severity" prefWidth="105"/>
+                            <TableColumn fx:id="windowsSourceColumn" text="%table.source" prefWidth="140"/>
+                            <TableColumn fx:id="windowsSuspiciousColumn" text="%table.suspicious" prefWidth="110"/>
+                            <TableColumn fx:id="windowsKeywordColumn" text="%table.keyword" prefWidth="120"/>
+                            <TableColumn fx:id="windowsMessageColumn" text="%table.message" prefWidth="470"/>
+                        </columns>
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                        </columnResizePolicy>
+                    </TableView>
+                </Tab>
+                <Tab fx:id="importedEventsTab" text="%tab.importedEvents">
                     <TableView fx:id="eventsTable">
                         <columns>
                             <TableColumn fx:id="lineNumberColumn" text="%table.lineNumber" prefWidth="70"/>
