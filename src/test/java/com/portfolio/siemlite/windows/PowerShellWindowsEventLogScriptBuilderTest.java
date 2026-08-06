@@ -38,12 +38,13 @@ class PowerShellWindowsEventLogScriptBuilderTest {
         assertTrue(script.contains("$event.ProviderName -eq 'Microsoft-Windows-PowerShell'"));
         assertTrue(script.contains("$event.Id -eq 4104"));
         assertTrue(script.contains("$message.Contains($siemLiteRunnerMarker)"));
-        assertTrue(script.contains("$message.Contains(\"Get-WinEvent -ListLog '*'\""));
+        assertTrue(script.contains("$message.Contains('Get-WinEvent -ListLog ''*''')"));
         assertTrue(script.contains("$message.Contains('$maxTotalEvents')"));
-        assertTrue(script.contains("$message.Contains(\"type = 'summary'\")"));
+        assertTrue(script.contains("$message.Contains('type = ''summary''')"));
         assertTrue(script.contains("$isPowerShellScriptBlock -and"));
         assertTrue(script.contains("$hasCurrentRunnerMarker -or $hasLegacyRunnerSignature"));
         assertTrue(script.contains("if ($isSiemLiteRunnerAuditEvent)"));
+        assertFalse(script.contains("$message.Contains(\""));
         assertFalse(script.contains("$log.LogName -ne 'Microsoft-Windows-PowerShell/Operational'"));
         assertFalse(script.contains("$event.ProviderName -ne 'Microsoft-Windows-PowerShell'"));
     }

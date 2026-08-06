@@ -78,7 +78,7 @@ final class PowerShellWindowsEventLogScriptBuilder {
 
                         $isPowerShellScriptBlock = $event.ProviderName -eq 'Microsoft-Windows-PowerShell' -and $event.Id -eq 4104
                         $hasCurrentRunnerMarker = $null -ne $message -and $message.Contains($siemLiteRunnerMarker)
-                        $hasLegacyRunnerSignature = $null -ne $message -and $message.Contains("Get-WinEvent -ListLog '*'") -and $message.Contains('$maxTotalEvents') -and $message.Contains("type = 'summary'")
+                        $hasLegacyRunnerSignature = $null -ne $message -and $message.Contains('Get-WinEvent -ListLog ''*''') -and $message.Contains('$maxTotalEvents') -and $message.Contains('type = ''summary''')
                         $isSiemLiteRunnerAuditEvent = $isPowerShellScriptBlock -and ($hasCurrentRunnerMarker -or $hasLegacyRunnerSignature)
                         if ($isSiemLiteRunnerAuditEvent) {
                             continue

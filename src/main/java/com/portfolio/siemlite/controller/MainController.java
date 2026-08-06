@@ -377,7 +377,7 @@ public class MainController {
         } catch (RuntimeException exception) {
             runOnFxThreadIfActive(() -> {
                 windowsPlaceholderLabel.setText(
-                        localizationService.get("placeholder.windows.noEvents"));
+                        localizationService.get("placeholder.windows.partialOrUnavailable"));
                 setWindowsStatus(localizationService.get("status.windows.loadFailed"));
             });
         } finally {
@@ -386,7 +386,7 @@ public class MainController {
     }
 
     private void applyWindowsRefreshResult(WindowsEventLogImportResult result, Instant completedAt) {
-        windowsPlaceholderLabel.setText(localizationService.get("placeholder.windows.noEvents"));
+        windowsPlaceholderLabel.setText(localizationService.get(windowsPlaceholderKey(result)));
         List<LogEvent> refreshedEvents = result.events().stream()
                 .map(importedEvent -> importedEvent.logEvent())
                 .toList();
@@ -555,9 +555,9 @@ public class MainController {
         }
 
         String status;
-        if (result.metadataComplete() && result.totalEvents() == 0) {
+        if (isDefinitiveEmptyWindowsResult(result)) {
             status = localizationService.get("status.windows.noEvents");
-        } else if (result.metadataComplete()) {
+        } else if (result.metadataComplete() && result.totalEvents() > 0) {
             status = localizationService.format(
                     "status.windows.loadedComplete",
                     result.totalEvents(),
@@ -571,6 +571,20 @@ public class MainController {
         }
 
         return appendWindowsStatusDetails(status, result, lastUpdated, localizationService);
+    }
+
+    static String windowsPlaceholderKey(WindowsEventLogImportResult result) {
+        return isDefinitiveEmptyWindowsResult(result)
+                ? "placeholder.windows.noEvents"
+                : "placeholder.windows.partialOrUnavailable";
+    }
+
+    private static boolean isDefinitiveEmptyWindowsResult(WindowsEventLogImportResult result) {
+        return result.totalEvents() == 0
+                && result.metadataComplete()
+                && result.warnings().isEmpty()
+                && !result.timedOut()
+                && !result.reachedCap();
     }
 
     static String limitWindowsTooltip(String message) {

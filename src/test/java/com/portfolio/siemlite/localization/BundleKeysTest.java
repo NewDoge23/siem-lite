@@ -52,6 +52,7 @@ class BundleKeysTest {
             "status.windows.loadFailed",
             "placeholder.windows.loading",
             "placeholder.windows.noEvents",
+            "placeholder.windows.partialOrUnavailable",
             "warning.saveSuspiciousEvents",
             "warning.loadSavedEvents",
             "value.yes",

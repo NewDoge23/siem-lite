@@ -134,6 +134,59 @@ class MainControllerStatusTest {
     }
 
     @Test
+    void distinguishesDefinitiveNoEventsFromPartialOrFailedEmptyResults() {
+        WindowsEventLogImportResult definitiveEmpty = windowsResult(
+                0, 0, 0, true, List.of(), false, false);
+        WindowsEventLogImportResult incomplete = windowsResult(
+                0,
+                0,
+                0,
+                false,
+                List.of(WindowsEventLogWarningCode.SUMMARY_MISSING),
+                false,
+                false);
+        WindowsEventLogImportResult warning = windowsResult(
+                0,
+                0,
+                0,
+                true,
+                List.of(WindowsEventLogWarningCode.INVALID_NDJSON),
+                false,
+                false);
+        WindowsEventLogImportResult timedOut = windowsResult(
+                0, 0, 0, true, List.of(), false, true);
+        WindowsEventLogImportResult capped = windowsResult(
+                0, 0, 0, true, List.of(), true, false);
+
+        assertEquals(
+                "placeholder.windows.noEvents",
+                MainController.windowsPlaceholderKey(definitiveEmpty));
+        assertEquals(
+                "placeholder.windows.partialOrUnavailable",
+                MainController.windowsPlaceholderKey(incomplete));
+        assertEquals(
+                "placeholder.windows.partialOrUnavailable",
+                MainController.windowsPlaceholderKey(warning));
+        assertEquals(
+                "placeholder.windows.partialOrUnavailable",
+                MainController.windowsPlaceholderKey(timedOut));
+        assertEquals(
+                "placeholder.windows.partialOrUnavailable",
+                MainController.windowsPlaceholderKey(capped));
+
+        String status = MainController.buildWindowsStatus(
+                incomplete,
+                "14:05:45",
+                localizationService);
+
+        assertTrue(status.startsWith(
+                "Loaded 0 Windows events | Suspicious: 0 | Partial result"));
+        assertTrue(status.contains("Warnings: 1"));
+        assertFalse(status.contains("No Windows events were found"));
+        assertFalse(status.contains("SUMMARY_MISSING"));
+    }
+
+    @Test
     void buildsPartialWindowsStatusWithoutUnreliableLogCount() {
         WindowsEventLogImportResult result = windowsResult(
                 2,
