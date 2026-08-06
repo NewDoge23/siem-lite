@@ -1,8 +1,26 @@
 package com.portfolio.siemlite.windows;
 
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+import java.util.Objects;
+
 final class PowerShellWindowsEventLogScriptBuilder {
 
     static final String INTERNAL_RUNNER_MARKER = "SIEM_LITE_WINDOWS_EVENT_IMPORT_V040";
+
+    private static final DateTimeFormatter START_TIME_FORMAT =
+            DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSS", Locale.ROOT);
+
+    private final ZoneId zoneId;
+
+    PowerShellWindowsEventLogScriptBuilder() {
+        this(ZoneId.systemDefault());
+    }
+
+    PowerShellWindowsEventLogScriptBuilder(ZoneId zoneId) {
+        this.zoneId = Objects.requireNonNull(zoneId, "zoneId");
+    }
 
     private static final String START_TIME_TOKEN = "__SIEM_START_TIME__";
     private static final String MAX_PER_LOG_TOKEN = "__SIEM_MAX_PER_LOG__";
@@ -16,7 +34,7 @@ final class PowerShellWindowsEventLogScriptBuilder {
             $OutputEncoding = $utf8
 
             $siemLiteRunnerMarker = '__SIEM_RUNNER_MARKER__'
-            $startTime = [DateTimeOffset]::Parse('__SIEM_START_TIME__', [Globalization.CultureInfo]::InvariantCulture).UtcDateTime
+            $startTime = [DateTime]::ParseExact('__SIEM_START_TIME__', 'yyyy-MM-ddTHH:mm:ss.fff', [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::AssumeLocal)
             $maxEventsPerLog = __SIEM_MAX_PER_LOG__
             $maxTotalEvents = __SIEM_MAX_TOTAL__
             $eventsWritten = 0
@@ -50,7 +68,13 @@ final class PowerShellWindowsEventLogScriptBuilder {
                 $maxForLog = [int][Math]::Min($maxEventsPerLog, $fairShare)
 
                 try {
-                    $events = @(Get-WinEvent -FilterHashtable @{ LogName = $log.LogName; StartTime = $startTime } -MaxEvents $maxForLog -ErrorAction Stop)
+                    $queryErrors = @()
+                    $events = @(Get-WinEvent -FilterHashtable @{ LogName = $log.LogName; StartTime = $startTime } -MaxEvents $maxForLog -ErrorAction SilentlyContinue -ErrorVariable +queryErrors)
+                    if ($queryErrors.Count -gt 0 -and $events.Count -eq 0) {
+                        $logsSkipped += 1
+                        continue
+                    }
+
                     $logsQueried += 1
                     $eventsEmittedForLog = 0
 
@@ -76,10 +100,10 @@ final class PowerShellWindowsEventLogScriptBuilder {
                             $message = $null
                         }
 
-                        $isPowerShellScriptBlock = $event.ProviderName -eq 'Microsoft-Windows-PowerShell' -and $event.Id -eq 4104
+                        $isPowerShellRunnerEventId = $event.Id -eq 4100 -or $event.Id -eq 4104
                         $hasCurrentRunnerMarker = $null -ne $message -and $message.Contains($siemLiteRunnerMarker)
                         $hasLegacyRunnerSignature = $null -ne $message -and $message.Contains('Get-WinEvent -ListLog ''*''') -and $message.Contains('$maxTotalEvents') -and $message.Contains('type = ''summary''')
-                        $isSiemLiteRunnerAuditEvent = $isPowerShellScriptBlock -and ($hasCurrentRunnerMarker -or $hasLegacyRunnerSignature)
+                        $isSiemLiteRunnerAuditEvent = $event.ProviderName -eq 'Microsoft-Windows-PowerShell' -and $isPowerShellRunnerEventId -and ($hasCurrentRunnerMarker -or $hasLegacyRunnerSignature)
                         if ($isSiemLiteRunnerAuditEvent) {
                             continue
                         }
@@ -127,7 +151,7 @@ final class PowerShellWindowsEventLogScriptBuilder {
 
     String build(WindowsEventLogQuery query) {
         return SCRIPT_TEMPLATE
-                .replace(START_TIME_TOKEN, query.startTime().toString())
+                .replace(START_TIME_TOKEN, query.startTime().atZone(zoneId).format(START_TIME_FORMAT))
                 .replace(MAX_PER_LOG_TOKEN, Integer.toString(query.maxEventsPerLog()))
                 .replace(MAX_TOTAL_TOKEN, Integer.toString(query.maxTotalEvents()))
                 .replace(RUNNER_MARKER_TOKEN, INTERNAL_RUNNER_MARKER);
